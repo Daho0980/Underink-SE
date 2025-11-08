@@ -7,8 +7,8 @@
 
 ## 소개
 Underink SE는 여러 OS 및 아키텍처에서 빠르고, 가볍고, 간단하게 실행되는 걸 목표로 하는 사운드 엔진입니다. 또한
-[Rudventure 프로젝트](https://github.com/Daho0980/Rudventure)에서 진행되는 라이선스 표기하기 귀찮아서 라이선스
-없애기 프로젝트의 첫 번째 프로젝트로 자리매김하고 있습니다.
+[Rudventure](https://github.com/Daho0980/Rudventure)에서 진행되는 라이선스 표기하기 귀찮아서 라이선스 없애기
+프로젝트의 첫 번째 프로젝트로 자리매김하고 있습니다.
 
 ### 주요 특징
 
