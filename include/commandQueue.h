@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "audioThreadStruct.h"
+#include "audioStruct.h"
 
 
 uint8_t cmd_setVolume();

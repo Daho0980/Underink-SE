@@ -1,5 +1,6 @@
-#ifndef WAV_CONTAINER_STRUCT_H
-#define WAV_CONTAINER_STRUCT_H
+#ifndef WAV_FORMAT_H
+#define WAV_FORMAT_H
+// I think this name is sucks
 
 #include <stdint.h>
 

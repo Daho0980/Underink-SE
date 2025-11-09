@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "soundStruct.h"
-#include "wavContainerStruct.h"
+#include "wavFormat.h"
 
 #include "management/cache_internal.h"
 

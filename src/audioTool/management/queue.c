@@ -7,13 +7,16 @@
 
 #include "constants.h"
 #include "soundStruct.h"
-#include "audioThreadStruct.h"
+#include "audioStruct.h"
 
 
 int queuePush(AudioManager* mgr, AudioRequest req) {
     pthread_mutex_lock(&mgr->mutex);
     if ( mgr->size >= MAX_REQUEST_QUEUE ) {
         pthread_mutex_unlock(&mgr->mutex);
+        fprintf(stderr,
+            "[queuePush]\x1b[31m(RequestQueueFull)\x1b[0m 큐가 가득 찼습니다.\n"
+        );
 
         return 1;
     }
@@ -79,14 +82,20 @@ int enqueueRequest(
 
     }
     
-    queuePush(mgr, req);
+    if ( queuePush(mgr, req) ) {
+        fprintf(stderr,
+            "[enqueueRequest]\x1b[31m(RequestEnqueueFailed)\x1b[0m 요청을 큐에 넣는 데 실패했습니다.\n"
+        );
+
+        return 1;
+    }
 
     return 0;
 }
 
 void _filterIntersection(
-    AudioThreadData* main     ,
-    AudioThreadData* temp     ,
+    AudioChannelData* main    ,
+    AudioChannelData* temp    ,
     int*             mainCount,
     int*             tempCount
 ) {
@@ -109,7 +118,7 @@ void _filterIntersection(
 /**
  * `outcount`는 `NULL`일 수 있습니다.
  */
-AudioThreadData* tagMatch(
+AudioChannelData* tagMatch(
     AudioManager* mgr     ,
     int*          outCount,
     const char*   firstTag,
@@ -117,10 +126,10 @@ AudioThreadData* tagMatch(
 ) {
     pthread_mutex_lock(&mgr->mutex);
 
-    AudioThreadData* filtered = malloc(sizeof(AudioThreadData)*mgr->threadCount)
+    AudioChannelData* filtered = malloc(sizeof(AudioChannelData)*mgr->threadCount)
    ;int threadCount = 0
    ;
-    AudioThreadData* tempFiltered = malloc(sizeof(AudioThreadData)*mgr->threadCount)
+    AudioChannelData* tempFiltered = malloc(sizeof(AudioChannelData)*mgr->threadCount)
    ;int tempCount = 0
    ;
     if (

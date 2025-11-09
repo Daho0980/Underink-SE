@@ -8,7 +8,7 @@
 #include <AudioUnit/AudioUnit.h>
 
 #include "stdcmd.h"
-#include "audioThreadStruct.h"
+#include "audioStruct.h"
 
 #include "audioEnv.h"
 
@@ -29,7 +29,7 @@ struct LocalVol {
 
 typedef struct {
     AudioUnit*       audioUnit ;
-    AudioThreadData* data      ;
+    AudioChannelData* data     ;
     struct LocalVol* localVol  ;
     atomic_bool*     pause     ;
     atomic_bool*     finishFlag;
@@ -180,9 +180,9 @@ void _playMode_SAMPLING(
     );
 }
 
-void* audioThread(void* arg) {
-   ;AudioThreadData* data = (AudioThreadData*)((ThreadArg*)arg)->thread
-   ;AudioManager*    mgr  = (AudioManager*)   ((ThreadArg*)arg)->mgr
+void* audioChannelThread(void* arg) {
+   ;AudioChannelData* data = (AudioChannelData*)((ThreadArg*)arg)->thread
+   ;AudioManager*     mgr  = (AudioManager*)    ((ThreadArg*)arg)->mgr
    ;
     AudioUnit   audioUnit       = NULL;
 
@@ -223,7 +223,7 @@ void* audioThread(void* arg) {
     }
     else {
         fprintf(stderr,
-            "[audioThread]\x1b[31m(UndefinedMode)\x1b[0m 정의되지 않은 모드입니다.\n"
+            "[audioChannelThread]\x1b[31m(UndefinedMode)\x1b[0m 정의되지 않은 모드입니다.\n"
         );
 
         pthread_mutex_unlock(&data->mutex);

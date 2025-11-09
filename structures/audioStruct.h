@@ -1,5 +1,5 @@
-#ifndef AUDIO_THREAD_STRUCT_H
-#define AUDIO_THREAD_STRUCT_H
+#ifndef AUDIO_STRUCT_H
+#define AUDIO_STRUCT_H
 
 #include <time.h>
 #include <float.h>
@@ -19,14 +19,6 @@ typedef struct {
 } AudioRequest;
 
 typedef struct {
-    uint32_t queue[MAX_COMMAND_QUEUE];
-    int     head                     ;
-    int     tail                     ;
-
-    pthread_mutex_t mutex;
-} CommandQueue_old;
-
-typedef struct {
     uint64_t mixTotal;
     int      head    ;
     int      tail    ;
@@ -44,12 +36,12 @@ typedef struct {
 
     pthread_mutex_t mutex;
     pthread_cond_t  cond ;
-} AudioThreadData;
+} AudioChannelData;
 
 typedef struct {
     atomic_bool running;
 
-    AudioThreadData* threads    ;
+    AudioChannelData* threads   ;
     int              threadCount;
     float            volume     ;
 
@@ -66,8 +58,8 @@ typedef struct {
 } AudioManager;
 
 typedef struct {
-    AudioThreadData* thread;
-    AudioManager*    mgr   ;
+    AudioChannelData* thread;
+    AudioManager*    mgr    ;
 } ThreadArg;
 
 #endif

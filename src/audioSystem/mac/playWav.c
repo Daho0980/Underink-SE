@@ -10,7 +10,7 @@
 #include "playWav.h"
 
 #include "soundStruct.h"
-#include "wavContainerStruct.h"
+#include "wavFormat.h"
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 

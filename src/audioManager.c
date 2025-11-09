@@ -13,15 +13,15 @@
 #include <stdbool.h>
 
 #include "soundStruct.h"
-#include "audioThreadStruct.h"
-#include "wavContainerStruct.h"
+#include "audioStruct.h"
+#include "wavFormat.h"
 
 #include "playWav.h"
 #include "constants.h"
 
 
-void* audioThread(void* arg) {
-    AudioThreadData* data = (AudioThreadData*) arg;
+void* audioChannelThread(void* arg) {
+    AudioChannelData* data = (AudioChannelData*) arg;
 
     pthread_mutex_lock(&data->mutex);
 
@@ -77,7 +77,7 @@ void dispatchRequest(AudioManager* mgr) {
     if ( queuePop(mgr, &req) ) return;
 
     for ( int i=0; i<mgr->threadCount; i++ ) {
-        AudioThreadData* t = &mgr->threads[i];
+        AudioChannelData* t = &mgr->threads[i];
         pthread_mutex_lock(&t->mutex);
         if ( !t->hasRequest ) {
             t->request    = req ;
@@ -96,7 +96,7 @@ void dispatchRequest(AudioManager* mgr) {
 
 bool checkThread(AudioManager* mgr) {
     for ( int i=0; i<mgr->threadCount; i++ ) {
-        AudioThreadData* t = &mgr->threads[i];
+        AudioChannelData* t = &mgr->threads[i];
         pthread_mutex_lock(&t->mutex);
         if ( t->hasRequest ) {
             pthread_mutex_unlock(&t->mutex);
@@ -110,7 +110,7 @@ bool checkThread(AudioManager* mgr) {
     return true;
 }
 
-int _initializeThread(AudioThreadData* thread, int id) {
+int _initializeThread(AudioChannelData* thread, int id) {
     thread->id         = id   ;
     thread->running    = true ;
     thread->hasRequest = false;
@@ -119,7 +119,7 @@ int _initializeThread(AudioThreadData* thread, int id) {
     pthread_cond_init(&thread->cond, NULL);
 
     pthread_t tid;
-    if ( pthread_create(&tid, NULL, audioThread, thread) != 0 ) {
+    if ( pthread_create(&tid, NULL, audioChannelThread, thread) != 0 ) {
         pthread_mutex_destroy(&thread->mutex);
         pthread_cond_destroy(&thread->cond);
 
@@ -130,8 +130,8 @@ int _initializeThread(AudioThreadData* thread, int id) {
     return 0;
 }
 
-AudioThreadData* _initializeThreadData(int count) {
-    return (AudioThreadData*)malloc(sizeof(AudioThreadData)*count);
+AudioChannelData* _initializeThreadData(int count) {
+    return (AudioChannelData*)malloc(sizeof(AudioChannelData)*count);
 }
 
 void _setManagerParams(

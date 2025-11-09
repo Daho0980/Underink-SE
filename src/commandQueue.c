@@ -5,7 +5,7 @@
 
 #include "stdcmd.h"
 
-#include "audioThreadStruct.h"
+#include "audioStruct.h"
 
 
 // ***********************

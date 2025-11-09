@@ -1,7 +1,7 @@
 #ifndef SET_MANAGER_H
 #define SET_MANAGER_H
 
-#include "audioThreadStruct.h"
+#include "audioStruct.h"
 #include "constants.h"
 
 
