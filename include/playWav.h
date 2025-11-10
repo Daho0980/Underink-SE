@@ -19,6 +19,6 @@ typedef struct {
     float*      volume     ;
 } inUserData_t;
 
-void play(AudioUnit *queue, inUserData_t *inUserData, const char mode[8], SampleOrDataOnly data, uint32_t size, int sampleRate, int channels, int bits);
+void play(AudioUnit* queue, inUserData_t* inUserData, const char mode[8], SampleOrDataOnly data, uint32_t size, int sampleRate, int channels, int bits);
 
 #endif

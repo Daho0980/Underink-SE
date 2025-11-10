@@ -12,6 +12,7 @@ message(STATUS "Arch: ${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "######################")
 
 add_library(audioTool SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stdcmd.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audioEnv.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/commandQueue.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audioTool/management/cache.c
@@ -43,7 +44,7 @@ set(AUDIO_SYSTEM_SOURCES tests/AMgrTableTest.c)
 
 if(APPLE)
     list(APPEND AUDIO_SYSTEM_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/mac/audioChannelThread.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/mac/audioChannel.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/mac/audioManager.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/mac/playWav.c
     )
@@ -72,7 +73,7 @@ if(APPLE)
 
 elseif(UNIX AND NOT APPLE)
     list(APPEND AUDIO_SYSTEM_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/linux/audioChannelThread.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/linux/audioChannel.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/linux/audioManager.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/linux/playWav.c
     )
@@ -92,7 +93,7 @@ elseif(UNIX AND NOT APPLE)
 
 elseif(WIN32)
     list(APPEND AUDIO_SYSTEM_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/win/audioChannelThread.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/win/audioChannel.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/win/audioManager.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/audioSystem/win/playWav.c
     )

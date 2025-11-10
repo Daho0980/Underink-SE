@@ -208,7 +208,8 @@ scalar_24:
     cmp        w5, w13
     csel       w5, w13, w5, lt
 
-    and        w5, w5, #0xFFFFFF
+    and        w5, w5, #0x00FFFFFF
+
     strb       w5, [x4]
     lsr        w6, w5, #8
     strb       w6, [x4, #1]

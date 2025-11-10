@@ -54,7 +54,7 @@ OSStatus _AURenderCallback(
 
     updateAudioDataAmplitude(
         outBuffer,
-        ctx->bits,
+        ctx->bits/8,
         bytesToCopy,
         *ctx->volume
     );
@@ -73,9 +73,9 @@ OSStatus _AURenderCallback(
     return noErr;
 }
 
-void play(AudioUnit *audioUnit,
+void play(AudioUnit* audioUnit,
 
-          inUserData_t *inUserData,
+          inUserData_t* inUserData,
           const char   mode[8]    ,
 
           SampleOrDataOnly data      ,

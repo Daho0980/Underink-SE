@@ -41,9 +41,9 @@ typedef struct {
 typedef struct {
     atomic_bool running;
 
-    AudioChannelData* threads   ;
-    int              threadCount;
-    float            volume     ;
+    AudioChannelData* threads    ;
+    int               threadCount;
+    float             volume     ;
 
     AudioRequest     queue[MAX_REQUEST_QUEUE];
     int              front                   ;

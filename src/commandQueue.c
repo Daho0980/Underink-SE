@@ -12,44 +12,22 @@
 // Queue Command Functions
 // ***********************
 
-/**
- * @brief   continue 명령을 생성합니다.
- */
 uint8_t cmd_continue() {
     return CMD_CONTINUE<<4;
 }
 
-/**
- * @brief   pause 명령을 생성합니다.
- */
 uint8_t cmd_pause() {
     return CMD_PAUSE<<4;
 }
 
-/**
- * @brief   stop 명령을 생성합니다.
- */
 uint8_t cmd_stop() {
     return CMD_STOP<<4;
 }
 
-/**
- * @brief   setVolume 명령을 생성합니다.
- */
 uint8_t cmd_setVolume() {
     return CMD_SET_VOLUME<<4;
 }
 
-/**
- * @brief   fade 명령을 생성합니다.
- * 
- * @param target   목표 볼륨 (0~4095, 12비트, 4095 = 100%)
- * @param duration 페이드 지속 시간 (밀리초 단위)
- * @return uint32_t 32비트 명령값
- * ```
- * [  opcode(4b)  ][  target(12b)  ][  duration(16b)  ]
- * ```
- */
 uint32_t cmd_fade(uint16_t target, uint16_t duration) {
     if ( target > 0xFFF ) {
         fprintf(stderr,
@@ -95,7 +73,8 @@ bool isCommandQueueFull_u32(CommandQueue* queue) {
     return (queue->mixTotal>>60)&0xF;
 }
 
-int commandPush(CommandQueue* queue, ThreadQueueCommand cmd) {
+int commandPush(AudioChannelData* channel, ThreadQueueCommand cmd) {
+    CommandQueue* queue = &channel->command;
     pthread_mutex_lock(&queue->mutex);
 
     if ( cmd.type == CMDB1 ) {
@@ -133,7 +112,7 @@ uint32_t _commandPop_u8(CommandQueue* queue) {
         return ((CMD_ERROR<<4)|cmd_u8QueueEmptyErr) << 24;
     }
 
-    uint32_t cmd = ((queue->mixTotal>>(8*queue->tail))&0xFF)<<24;
+    uint32_t cmd = ((queue->mixTotal>>(8*queue->head))&0xFF)<<24;
     queue->head  = (queue->head+1) % MAX_COMMAND_QUEUE;
 
     return cmd;
@@ -172,6 +151,7 @@ uint32_t commandPop(CommandQueue* queue) {
     return ((CMD_ERROR<<4)|cmd_commandNotFoundErr)<<24;
 
     success:
+        printf("명령을 발견했습니다 : \x1b[33m%08X\x1b[0m\n", out);
         pthread_mutex_unlock(&queue->mutex);
 
         return out;

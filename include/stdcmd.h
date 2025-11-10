@@ -30,12 +30,16 @@ typedef struct {
     } command;
 } ThreadQueueCommand;
 
-ThreadQueueCommand cmd_u8(uint8_t cmd) {
-    return (ThreadQueueCommand){ .type=CMDB1, .command.b1=cmd };
-}
+/**
+ * @brief   u8 타입 명령 전용 래퍼입니다.
+ *          ThreadQueueCommand(type=CMDB1)로 래핑합니다.
+ */
+ThreadQueueCommand pkcmd_u8(uint8_t cmd);
 
-ThreadQueueCommand cmd_u32(uint32_t cmd) {
-    return (ThreadQueueCommand){ .type=CMDB4, .command.b4=cmd };
-}
+/**
+ * @brief   u32 타입 명령 전용 래퍼입니다.
+ *          ThreadQueueCommand(type=CMDB4)로 래핑합니다.
+ */
+ThreadQueueCommand pkcmd_u32(uint32_t cmd);
 
 #endif

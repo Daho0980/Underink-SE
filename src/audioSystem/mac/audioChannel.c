@@ -26,14 +26,26 @@ struct LocalVol {
     float decayFactor;
     float target     ;
 };
+struct LocalVol LocalVol_init() {
+    struct LocalVol out = {
+        .baseVolume  = 100.0,
+        .currVolume  = 1.0,
+        .fadeActive  = false,
+        .decayFactor = 0.0,
+        .target      = 0.0
+    };
+
+    return out;
+}
 
 typedef struct {
-    AudioUnit*       audioUnit ;
-    AudioChannelData* data     ;
-    struct LocalVol* localVol  ;
-    atomic_bool*     pause     ;
-    atomic_bool*     finishFlag;
-    AudioManager*    mgr       ;
+    AudioUnit*        audioUnit ;
+    AudioChannelData* data      ;
+    struct LocalVol*  localVol  ;
+    atomic_bool*      pause     ;
+    atomic_bool*      finishFlag;
+    AudioManager*     mgr       ;
+    bool*             hasRequest;
 } CommandHandlerContext;
 
 
@@ -82,7 +94,13 @@ void _commandHandler_ALLINONE(uint32_t cmd, CommandHandlerContext* context) {
 void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
     switch ( (uint8_t)(cmd>>28) ) {
         case CMD_CONTINUE:
-            atomic_store(context->pause, false);
+            if ( context->hasRequest ) {
+                atomic_store(context->pause, false);
+            } else {
+                fprintf(stderr,
+                    "[_commandHandler_SAMPLING]\x1b[31m(RequestNotFound)\x1b[0m 요청이 존재하지 않습니다.\n"
+                );
+            }
 
             break;
 
@@ -97,11 +115,19 @@ void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
             break;
 
         case CMD_SET_VOLUME:
+            printf("[ -- 이전 -- ]\n");
+            printf("currVol  : %f\n", context->localVol->currVolume);
+            printf("localVol : %f\n", context->localVol->baseVolume);
+            printf("baseVol  : %f\n", context->mgr->volume);
             updateVolume(
                 &context->localVol->currVolume,
                 context->localVol->baseVolume ,
                 context->mgr->volume
             );
+            printf("[ -- 이후 -- ]\n");
+            printf("currVol  : %f\n", context->localVol->currVolume);
+            printf("localVol : %f\n", context->localVol->baseVolume);
+            printf("baseVol  : %f\n", context->mgr->volume);
 
             break;
 
@@ -180,17 +206,16 @@ void _playMode_SAMPLING(
     );
 }
 
-void* audioChannelThread(void* arg) {
+void* audioChannel(void* arg) {
    ;AudioChannelData* data = (AudioChannelData*)((ThreadArg*)arg)->thread
    ;AudioManager*     mgr  = (AudioManager*)    ((ThreadArg*)arg)->mgr
    ;
-    AudioUnit   audioUnit       = NULL;
+    AudioUnit audioUnit = NULL;
 
     atomic_bool finished = false;
     atomic_bool pause    = false;
 
-    struct LocalVol localVol;
-    localVol.fadeActive = false;
+    struct LocalVol localVol = LocalVol_init();
 
     CommandHandlerContext ctx;
     ctx.audioUnit  = &audioUnit
@@ -199,6 +224,7 @@ void* audioChannelThread(void* arg) {
    ;ctx.pause      = &pause
    ;ctx.finishFlag = &finished
    ;ctx.mgr        = mgr
+   ;ctx.hasRequest = &data->hasRequest
    ;
     void (*playmode)(
         AudioUnit*        audioUnit ,
@@ -223,7 +249,7 @@ void* audioChannelThread(void* arg) {
     }
     else {
         fprintf(stderr,
-            "[audioChannelThread]\x1b[31m(UndefinedMode)\x1b[0m 정의되지 않은 모드입니다.\n"
+            "[audioChannel]\x1b[31m(UndefinedMode)\x1b[0m 정의되지 않은 모드입니다.\n"
         );
 
         pthread_mutex_unlock(&data->mutex);
