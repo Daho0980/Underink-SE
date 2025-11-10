@@ -40,7 +40,7 @@ elseif(UNIX AND NOT APPLE)
     )
 endif()
 
-set(AUDIO_SYSTEM_SOURCES tests/AMgrTableTest.c)
+set(AUDIO_SYSTEM_SOURCES tests_public/AMgrTableTest.c)
 
 if(APPLE)
     list(APPEND AUDIO_SYSTEM_SOURCES
