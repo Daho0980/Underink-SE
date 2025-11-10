@@ -301,12 +301,6 @@ int main() {
 
     AudioManager* mgr = initializeManager(table, "TST", "SAMPLING", 1);
 
-    // 이제 여기에 매니저 루프를 임시 구현할 차례입니다
-    // 근데 누가 하냐고요?
-    // 물론 당신이죠 일하세요 일
-    // 이제 구현 안 해도 돼요
-    // 근데 이젠 네가 함수를 어디다 넣을지 정리해야지 ㅇㅇ
-
     // enqueueRequest(
     //     mgr,
     //     getSound("assets/test1.wav"),
