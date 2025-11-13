@@ -31,6 +31,7 @@ void destroyAllThreads(AudioManager* mgr, int index) {
 
         atomic_store(&target->running, false);
         pthread_cond_signal(&target->cond);
+        commandPush(target, pkcmd_u8(cmd_stop()));
         while ( !atomic_load(&target->finished) ) {
             usleep(1000);
         }
