@@ -98,10 +98,15 @@ void unregisterAndDestroyManager(ManagerTable* mgrt, AudioManager* mgr, bool for
 
 void destroyManagerTable(ManagerTable* mgrt, bool force) {
     printf("[destroyManagerTable] 매니저 테이블 파괴 중...\n");
-    for ( int i=0; i<mgrt->count; i++ ) {
-        // destroyManager(mgrt->table[i].mgr, force);
+    printf("[destroyManagerTable] 현재 테이블에 포함된 매니저 수 : \x1b[33m%d\x1b[0m\n", mgrt->count);
+
+    int count = mgrt->count;
+    for ( int i=0; i<count; i++ ) {
+        printf("[destroyManagerTable] \x1b[33m%d\x1b[0m번째 매니저 파괴 중...\n", i);
         unregisterAndDestroyManager(mgrt, mgrt->table[i].mgr, force);
+        printf("완료\n");
     }
+    printf("[destroyManagerTable] 남은 매니저 수 : \x1b[33m%d\x1b[0m\n", mgrt->count);
 
     free(mgrt);
     printf("[destroyManagerTable]\x1b[32m(SUCCESS)\x1b[0m 매니저 테이블이 파괴되었습니다.\n");
@@ -246,7 +251,7 @@ AudioManager* initializeManager(
         printf("[initializeManager]\x1b[32m(SUCCESS)\x1b[0m %d번째 스레드가 초기화되었습니다.\n", i);
     }
 
-    registerManager(mgrt, mgr);
+    if ( mgrt ) registerManager(mgrt, mgr);
     mgr->running = true;
 
     pthread_t tid;
@@ -298,10 +303,11 @@ AudioManager* setSFXManager(ManagerTable* mgrt) {
 int main() {
     printf("\n[ -- main 시작 -- ]\n\n");
     ManagerTable* table  = initializeManagerTable(4);
-    // AudioManager* bgmmgr = setBGMManager(table);
-    // AudioManager* dupmgr = setBGMManager(table);
-    // unregisterAndDestroyManager(table, bgmmgr);
+    AudioManager* bgmmgr = setBGMManager(table);
+    AudioManager* dupmgr = setBGMManager(table);
+    unregisterAndDestroyManager(table, bgmmgr, true);
 
+    AudioManager* sfx = initializeManager(table, "SFX", "ALLINONE", 2);
     AudioManager* mgr = initializeManager(table, "TST", "SAMPLING", 1);
 
     // enqueueRequest(
