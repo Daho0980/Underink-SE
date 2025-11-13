@@ -130,7 +130,7 @@ void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
            ;float    target_vol  = VOLUME_SCALE * (float)((cmd>>16)&0x0FFF)
            ;
             LV->fadeActive  = true
-           ;LV->decayFactor = (float)((LV->baseVolume-target_vol)/duration_ms)
+           ;LV->decayFactor = (target_vol-LV->baseVolume) / (float)duration_ms
            ;LV->target      = target_vol
            ;
             break;
@@ -314,7 +314,7 @@ void* audioChannel(void* arg) {
                 commandHandler(commandPop(&data->command), &ctx);
             } else {
                 usleep(1000);
-
+                
                 if ( localVol.fadeActive ) {
                     localVol.baseVolume += localVol.decayFactor;
                     updateVolume(

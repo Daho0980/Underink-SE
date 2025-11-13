@@ -330,20 +330,28 @@ int main() {
         "music", NULL
     );
     usleep(3000000);
-    printf("\x1b[31m[ -- 3초 경과 -- ]\x1b[0m\n");
+    printf("\n\x1b[31m[ -- 3초 경과 -- ]\x1b[0m\n");
     commandPush(&mgr->threads[0], pkcmd_u8(cmd_pause()));
 
-    usleep(3000000);
-    printf("\x1b[31m[ -- 4초 경과 -- ]\x1b[0m\n");
+    usleep(1000000);
+    printf("\n\x1b[31m[ -- 4초 경과 -- ]\x1b[0m\n");
     commandPush(&mgr->threads[0], pkcmd_u8(cmd_continue()));
 
     usleep(3000000);
-    printf("\x1b[31m[ -- 7초 경과 -- ]\x1b[0m\n");
+    printf("\n\x1b[31m[ -- 7초 경과 -- ]\x1b[0m\n");
     mgr->volume = 50.0;
     commandPush(&mgr->threads[0], pkcmd_u8(cmd_setVolume()));
 
-    usleep(3000000);
-    printf("\x1b[31m[ -- 10초 경과 -- ]\x1b[0m\n");
+    usleep(4000000);
+    printf("\n\x1b[31m[ -- 11초 경과 -- ]\x1b[0m\n");
+    // printf("\x1b[33m이 명령\x1b[0m은 \x1b[32m스레드\x1b[0m를 \x1b[31m죽입니다!\x1b[0m\n\n");
+    // commandPush(&mgr->threads[0], pkcmd_u8(cmd_stop()));
+    mgr->volume = 100.0;
+    commandPush(&mgr->threads[0], pkcmd_u8(cmd_setVolume()));
+    printf("볼륨이 100%%로 재설정됨\n");
+    commandPush(&mgr->threads[0], pkcmd_u32(cmd_fade(0, 9000)));
+    printf("페이드 적용됨\n");
+
     unregisterAndDestroyManager(table, mgr);
     destroyManagerTable(table);
     printf("\n[ -- main 종료 -- ]\n\n");
