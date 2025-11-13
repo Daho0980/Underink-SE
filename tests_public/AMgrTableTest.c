@@ -24,14 +24,15 @@ typedef struct {
 } ManagerTable;
 
 
-void destroyAllThreads(AudioManager* mgr, int index) {
+void destroyAllThreads(AudioManager* mgr, int index, bool force) {
     for ( int i=(index-1); i>=0; i-- ) {
         printf("[destroyAllThreads] \x1b[33m%d\x1b[0m번째 스레드 파괴 중...", i);
         AudioChannelData* target = &mgr->threads[i];
 
         atomic_store(&target->running, false);
         pthread_cond_signal(&target->cond);
-        commandPush(target, pkcmd_u8(cmd_stop()));
+        if ( force ) commandPush(target, pkcmd_u8(cmd_stop()));
+        
         while ( !atomic_load(&target->finished) ) {
             usleep(1000);
         }
@@ -45,38 +46,12 @@ void destroyAllThreads(AudioManager* mgr, int index) {
     printf("[destroyAllThreads]\x1b[32m(SUCCESS)\x1b[0m 모든 스레드가 파괴되었습니다.\n");
 }
 
-void destroyManager(AudioManager* mgr) {
+void destroyManager(AudioManager* mgr, bool force) {
     printf("[destroyManager] 매니저 파괴 중...\n");
-    destroyAllThreads(mgr, mgr->threadCount);
+    destroyAllThreads(mgr, mgr->threadCount, force);
     pthread_mutex_destroy(&mgr->mutex);
     free(mgr);
     printf("[destroyManager]\x1b[32m(SUCCESS)\x1b[0m 매니저가 파괴되었습니다.\n");
-}
-
-void destroyManagerTable(ManagerTable* mgrt) {
-    printf("[destroyManagerTable] 매니저 테이블 파괴 중...\n");
-    for ( int i=0; i<mgrt->count; i++ ) {
-        destroyManager(mgrt->table[i].mgr);
-    }
-
-    free(mgrt);
-    printf("[destroyManagerTable]\x1b[32m(SUCCESS)\x1b[0m 매니저 테이블이 파괴되었습니다.\n");
-}
-
-ManagerTable* initializeManagerTable(int size) {
-    ManagerTable* mgrt = malloc(sizeof(ManagerTable) + (sizeof(ManagerTableUnit)*size));
-    if ( mgrt == NULL ) {
-        printf("[initializeManagerTable]\x1b[31m(NewManagerTableFailed)\x1b[0m 새 매니저 테이블 생성 도중 문제가 발생했습니다.\n");
-
-        return NULL;
-    }
-
-    mgrt->max   = size;
-    mgrt->count = 0   ;
-
-    printf("[initializeManagerTable]\x1b[32m(SUCCESS)\x1b[0m 매니저 테이블이 성공적으로 생성되었습니다.\n");
-
-    return mgrt;
 }
 
 int findManagerType(ManagerTable* mgrt, const char type[3]) {
@@ -87,32 +62,6 @@ int findManagerType(ManagerTable* mgrt, const char type[3]) {
     }
 
     return -1;
-}
-
-int registerManager(
-    ManagerTable* mgrt,
-    AudioManager* mgr
-) {
-    printf("[registerManager] registerManager 호출됨\n");
-    if ( mgrt->count >= mgrt->max ) {
-        fprintf(stderr,
-            "[registerManager]\x1b[31m(ManagerTableFull)\x1b[0m 매니저 테이블이 가득 찼습니다.\n"
-        );
-        if ( mgrt->count > mgrt->max ) {
-            fprintf(stderr,
-                "[registerManager]\x1b[33m(TooManyManagers)\x1b[0m 현재 테이블의 매니저 수가 최대 매니저 수보다 많습니다. 이는 비정상적인 동작으로 간주될 수 있습니다.\n"
-            );
-        }
-
-        return 1;
-    }
-
-    mgrt->table[mgrt->count].mgr = mgr
-   ;mgrt->count++
-   ;
-    printf("[registerManager]\x1b[32m(SUCCESS)\x1b[0m 매니저 \x1b[33m%p\x1b[0m가 등록되었습니다.\n", mgr);
-
-    return 0;
 }
 
 int unregisterManager(
@@ -138,6 +87,64 @@ int unregisterManager(
     mgrt->count--;
 
     printf("[unregisterManager]\x1b[32m(SUCCESS)\x1b[0m \x1b[33m%.*s\x1b[0m 매니저가 등록 해제되었습니다.\n", 3, type);
+
+    return 0;
+}
+
+void unregisterAndDestroyManager(ManagerTable* mgrt, AudioManager* mgr, bool force) {
+    unregisterManager(mgrt, mgr->type);
+    destroyManager(mgr, force);
+}
+
+void destroyManagerTable(ManagerTable* mgrt, bool force) {
+    printf("[destroyManagerTable] 매니저 테이블 파괴 중...\n");
+    for ( int i=0; i<mgrt->count; i++ ) {
+        // destroyManager(mgrt->table[i].mgr, force);
+        unregisterAndDestroyManager(mgrt, mgrt->table[i].mgr, force);
+    }
+
+    free(mgrt);
+    printf("[destroyManagerTable]\x1b[32m(SUCCESS)\x1b[0m 매니저 테이블이 파괴되었습니다.\n");
+}
+
+ManagerTable* initializeManagerTable(int size) {
+    ManagerTable* mgrt = malloc(sizeof(ManagerTable) + (sizeof(ManagerTableUnit)*size));
+    if ( mgrt == NULL ) {
+        printf("[initializeManagerTable]\x1b[31m(NewManagerTableFailed)\x1b[0m 새 매니저 테이블 생성 도중 문제가 발생했습니다.\n");
+
+        return NULL;
+    }
+
+    mgrt->max   = size;
+    mgrt->count = 0   ;
+
+    printf("[initializeManagerTable]\x1b[32m(SUCCESS)\x1b[0m 매니저 테이블이 성공적으로 생성되었습니다.\n");
+
+    return mgrt;
+}
+
+int registerManager(
+    ManagerTable* mgrt,
+    AudioManager* mgr
+) {
+    printf("[registerManager] registerManager 호출됨\n");
+    if ( mgrt->count >= mgrt->max ) {
+        fprintf(stderr,
+            "[registerManager]\x1b[31m(ManagerTableFull)\x1b[0m 매니저 테이블이 가득 찼습니다.\n"
+        );
+        if ( mgrt->count > mgrt->max ) {
+            fprintf(stderr,
+                "[registerManager]\x1b[33m(TooManyManagers)\x1b[0m 현재 테이블의 매니저 수가 최대 매니저 수보다 많습니다. 이는 비정상적인 동작으로 간주될 수 있습니다.\n"
+            );
+        }
+
+        return 1;
+    }
+
+    mgrt->table[mgrt->count].mgr = mgr
+   ;mgrt->count++
+   ;
+    printf("[registerManager]\x1b[32m(SUCCESS)\x1b[0m 매니저 \x1b[33m%p\x1b[0m가 등록되었습니다.\n", mgr);
 
     return 0;
 }
@@ -232,7 +239,7 @@ AudioManager* initializeManager(
 
     for ( int i=0; i<threadCount; i++ ) {
         if ( _initializeChannelData(&mgr->threads[i], i, mgr) == 1 ) {
-            destroyAllThreads(mgr, i);
+            destroyAllThreads(mgr, i, true);
 
             goto cleanup;
         }
@@ -260,11 +267,6 @@ AudioManager* initializeManager(
         free(mgr);
 
         return NULL;
-}
-
-void unregisterAndDestroyManager(ManagerTable* mgrt, AudioManager* mgr) {
-    unregisterManager(mgrt, mgr->type);
-    destroyManager(mgr);
 }
 
 AudioManager* setBGMManager(ManagerTable* mgrt) {
@@ -345,16 +347,13 @@ int main() {
 
     usleep(4000000);
     printf("\n\x1b[31m[ -- 11초 경과 -- ]\x1b[0m\n");
-    // printf("\x1b[33m이 명령\x1b[0m은 \x1b[32m스레드\x1b[0m를 \x1b[31m죽입니다!\x1b[0m\n\n");
-    // commandPush(&mgr->threads[0], pkcmd_u8(cmd_stop()));
     mgr->volume = 100.0;
     commandPush(&mgr->threads[0], pkcmd_u8(cmd_setVolume()));
     printf("볼륨이 100%%로 재설정됨\n");
     commandPush(&mgr->threads[0], pkcmd_u32(cmd_fade(0, 9000)));
     printf("페이드 적용됨\n");
 
-    unregisterAndDestroyManager(table, mgr);
-    destroyManagerTable(table);
+    destroyManagerTable(table, false);
     printf("\n[ -- main 종료 -- ]\n\n");
     return 0;
 }
