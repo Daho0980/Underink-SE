@@ -115,19 +115,11 @@ void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
             break;
 
         case CMD_SET_VOLUME:
-            printf("[ -- 이전 -- ]\n");
-            printf("currVol  : %f\n", context->localVol->currVolume);
-            printf("localVol : %f\n", context->localVol->baseVolume);
-            printf("baseVol  : %f\n", context->mgr->volume);
             updateVolume(
                 &context->localVol->currVolume,
                 context->localVol->baseVolume ,
                 context->mgr->volume
             );
-            printf("[ -- 이후 -- ]\n");
-            printf("currVol  : %f\n", context->localVol->currVolume);
-            printf("localVol : %f\n", context->localVol->baseVolume);
-            printf("baseVol  : %f\n", context->mgr->volume);
 
             break;
 

@@ -44,6 +44,8 @@ _updateAudioDataAmplitude:
         ldr        w12, =0x7FFFFF
         ldr        w13, =-0x800000
 
+        mov        w8, #1
+
         b          loop
     pre_32:
         adr        x10, vector_32

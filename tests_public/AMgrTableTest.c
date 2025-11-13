@@ -326,7 +326,7 @@ int main() {
     // );
     enqueueRequest(
         mgr,
-        getSound("assets/test3.wav"),
+        getSound("assets/test2.wav"),
         "music", NULL
     );
     usleep(3000000);
