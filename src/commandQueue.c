@@ -48,7 +48,7 @@ uint32_t cmd_fade(uint16_t target, uint16_t duration) {
 
     return (
         (CMD_FADE<<28)         |
-        ((uint32_t)target<<12) |
+        ((uint32_t)target<<16) |
         duration
     );
 }

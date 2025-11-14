@@ -1,7 +1,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdatomic.h>
 
@@ -51,151 +53,38 @@ typedef struct {
 
 extern void updateVolume(float* localCurrVolume, float localBaseVolume, float globalVolume);
 
-void _cleanupAudioUnit(AudioUnit* audioUnit) {
-    if ( !audioUnit || !*audioUnit ) return;
+void destroyAllChannelThreads(AudioManager* mgr, int index, bool force);
+void* audioChannel(void* arg);
 
-    AudioOutputUnitStop(*audioUnit);
-    AudioUnitUninitialize(*audioUnit);
-}
+static void _cleanupAudioUnit(AudioUnit* audioUnit);
+static void _commandHandler_ALLINONE(uint32_t cmd, CommandHandlerContext* context);
+static void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context);
+static SampleOrDataOnly _getSoundData_ALLINONE(uint8_t* audioData);
+static SampleOrDataOnly _getSoundData_SAMPLING(uint8_t* audioData);
+static void _playMode_ALLINONE(AudioUnit* audioUnit, inUserData_t* inUserData, SampleOrDataOnly* soundData, Sound* sound);
+static void _playMode_SAMPLING(AudioUnit* audioUnit, inUserData_t* inUserData, SampleOrDataOnly* soundData, Sound* sound);
 
-void _commandHandler_ALLINONE(uint32_t cmd, CommandHandlerContext* context) {
-    switch ( (uint8_t)(cmd>>28) ) {
-        case CMD_CONTINUE: break;
-        case CMD_PAUSE   :
-        case CMD_STOP    :
-            atomic_store(context->finishFlag, true);
-            _cleanupAudioUnit(context->audioUnit);
 
-            break;
+void destroyAllChannelThreads(AudioManager* mgr, int index, bool force) {
+    for ( int i=(index-1); i>=0; i-- ) {
+        printf("[destroyAllChannelThreads] \x1b[33m%d\x1b[0m번째 스레드 파괴 중...", i);
+        AudioChannelData* target = &mgr->threads[i];
 
-        case CMD_SET_VOLUME:
-            updateVolume(
-                &context->localVol->currVolume,
-                context->localVol->baseVolume ,
-                context->mgr->volume
-            );
-
-            break;
-
-        case CMD_FADE: break;
-
-        case CMD_ERROR:
-            fprintf(stderr,
-                "[commandHandler]\x1b[31m(ErrorCommand)\x1b[0m 에러 처리 명령이 들어왔습니다. : %u\n",
-                cmd
-            );
-
-            break;
-    }
-
-    return;
-}
-
-void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
-    switch ( (uint8_t)(cmd>>28) ) {
-        case CMD_CONTINUE:
-            if ( context->hasRequest ) {
-                atomic_store(context->pause, false);
-            } else {
-                fprintf(stderr,
-                    "[_commandHandler_SAMPLING]\x1b[31m(RequestNotFound)\x1b[0m 요청이 존재하지 않습니다.\n"
-                );
-            }
-
-            break;
-
-        case CMD_PAUSE:
-            atomic_store(context->pause, true);
-
-            break;
-
-        case CMD_STOP:
-            atomic_store(context->finishFlag, true);
-
-            break;
-
-        case CMD_SET_VOLUME:
-            updateVolume(
-                &context->localVol->currVolume,
-                context->localVol->baseVolume ,
-                context->mgr->volume
-            );
-
-            break;
-
-        case CMD_FADE: {
-            struct LocalVol* LV = context->localVol;
-
-           ;uint16_t duration_ms = (uint16_t)(cmd&0xFFFF)
-           ;float    target_vol  = VOLUME_SCALE * (float)((cmd>>16)&0x0FFF)
-           ;
-            LV->fadeActive  = true
-           ;LV->decayFactor = (target_vol-LV->baseVolume) / (float)duration_ms
-           ;LV->target      = target_vol
-           ;
-            break;
+        atomic_store(&target->running, false);
+        pthread_cond_signal(&target->cond);
+        if ( force ) commandPush(target, pkcmd_u8(cmd_stop()));
+        
+        while ( !atomic_load(&target->finished) ) {
+            usleep(1000);
         }
 
-        case CMD_ERROR:
-            fprintf(stderr,
-                "[commandHandler]\x1b[31m(ErrorCommand)\x1b[0m 에러 처리 명령이 들어왔습니다. : %u\n",
-                cmd
-            );
-
-            break;
+        pthread_mutex_destroy(&target->mutex);
+        pthread_cond_destroy(&target->cond);
+        printf(" 완료\n");
     }
 
-    return;
-}
-
-SampleOrDataOnly _getSoundData_ALLINONE(uint8_t* audioData) {
-    SampleOrDataOnly soundData = { .dataOnly=audioData };
-
-    return soundData;
-}
-SampleOrDataOnly _getSoundData_SAMPLING(uint8_t* audioData) {
-    SampleSound a_sampleSound = sampleSound_init(
-        audioData,
-        gAudioEnv.samplingChunkSize
-    );
-    SampleOrDataOnly soundData = { .sampleData=a_sampleSound };
-
-    return soundData;
-}
-
-void _playMode_ALLINONE(
-    AudioUnit*        audioUnit ,
-    inUserData_t*     inUserData,
-    SampleOrDataOnly* soundData ,
-    Sound*            sound
-) {
-    play(
-        audioUnit,
-        inUserData,
-        "ALLINONE",
-        *soundData,
-        sound->size,
-        sound->sampleRate,
-        sound->channels,
-        sound->bits
-    );
-}
-void _playMode_SAMPLING(
-    AudioUnit*        audioUnit ,
-    inUserData_t*     inUserData,
-    SampleOrDataOnly* soundData ,
-    Sound*            sound
-) {
-    play(
-        audioUnit,
-        inUserData,
-        "SAMPLING",
-        *soundData,
-        sound->size,
-        sound->sampleRate,
-        sound->channels,
-        sound->bits
-    );
+    free(mgr->threads);
+    printf("[destroyAllChannelThreads]\x1b[32m(SUCCESS)\x1b[0m 모든 스레드가 파괴되었습니다.\n");
 }
 
 void* audioChannel(void* arg) {
@@ -358,4 +247,151 @@ void* audioChannel(void* arg) {
         atomic_store(&data->finished, true);
 
         return NULL;
+}
+
+void _cleanupAudioUnit(AudioUnit* audioUnit) {
+    if ( !audioUnit || !*audioUnit ) return;
+
+    AudioOutputUnitStop(*audioUnit);
+    AudioUnitUninitialize(*audioUnit);
+}
+
+void _commandHandler_ALLINONE(uint32_t cmd, CommandHandlerContext* context) {
+    switch ( (uint8_t)(cmd>>28) ) {
+        case CMD_CONTINUE: break;
+        case CMD_PAUSE   :
+        case CMD_STOP    :
+            atomic_store(context->finishFlag, true);
+            _cleanupAudioUnit(context->audioUnit);
+
+            break;
+
+        case CMD_SET_VOLUME:
+            updateVolume(
+                &context->localVol->currVolume,
+                context->localVol->baseVolume ,
+                context->mgr->volume
+            );
+
+            break;
+
+        case CMD_FADE: break;
+
+        case CMD_ERROR:
+            fprintf(stderr,
+                "[commandHandler]\x1b[31m(ErrorCommand)\x1b[0m 에러 처리 명령이 들어왔습니다. : %u\n",
+                cmd
+            );
+
+            break;
+    }
+
+    return;
+}
+
+void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
+    switch ( (uint8_t)(cmd>>28) ) {
+        case CMD_CONTINUE:
+            if ( context->hasRequest ) {
+                atomic_store(context->pause, false);
+            } else {
+                fprintf(stderr,
+                    "[_commandHandler_SAMPLING]\x1b[31m(RequestNotFound)\x1b[0m 요청이 존재하지 않습니다.\n"
+                );
+            }
+
+            break;
+
+        case CMD_PAUSE:
+            atomic_store(context->pause, true);
+
+            break;
+
+        case CMD_STOP:
+            atomic_store(context->finishFlag, true);
+
+            break;
+
+        case CMD_SET_VOLUME:
+            updateVolume(
+                &context->localVol->currVolume,
+                context->localVol->baseVolume ,
+                context->mgr->volume
+            );
+
+            break;
+
+        case CMD_FADE: {
+            struct LocalVol* LV = context->localVol;
+
+           ;uint16_t duration_ms = (uint16_t)(cmd&0xFFFF)
+           ;float    target_vol  = VOLUME_SCALE * (float)((cmd>>16)&0x0FFF)
+           ;
+            LV->fadeActive  = true
+           ;LV->decayFactor = (target_vol-LV->baseVolume) / (float)duration_ms
+           ;LV->target      = target_vol
+           ;
+            break;
+        }
+
+        case CMD_ERROR:
+            fprintf(stderr,
+                "[commandHandler]\x1b[31m(ErrorCommand)\x1b[0m 에러 처리 명령이 들어왔습니다. : %u\n",
+                cmd
+            );
+
+            break;
+    }
+
+    return;
+}
+
+SampleOrDataOnly _getSoundData_ALLINONE(uint8_t* audioData) {
+    SampleOrDataOnly soundData = { .dataOnly=audioData };
+
+    return soundData;
+}
+SampleOrDataOnly _getSoundData_SAMPLING(uint8_t* audioData) {
+    SampleSound a_sampleSound = sampleSound_init(
+        audioData,
+        gAudioEnv.samplingChunkSize
+    );
+    SampleOrDataOnly soundData = { .sampleData=a_sampleSound };
+
+    return soundData;
+}
+
+void _playMode_ALLINONE(
+    AudioUnit*        audioUnit ,
+    inUserData_t*     inUserData,
+    SampleOrDataOnly* soundData ,
+    Sound*            sound
+) {
+    play(
+        audioUnit,
+        inUserData,
+        "ALLINONE",
+        *soundData,
+        sound->size,
+        sound->sampleRate,
+        sound->channels,
+        sound->bits
+    );
+}
+void _playMode_SAMPLING(
+    AudioUnit*        audioUnit ,
+    inUserData_t*     inUserData,
+    SampleOrDataOnly* soundData ,
+    Sound*            sound
+) {
+    play(
+        audioUnit,
+        inUserData,
+        "SAMPLING",
+        *soundData,
+        sound->size,
+        sound->sampleRate,
+        sound->channels,
+        sound->bits
+    );
 }

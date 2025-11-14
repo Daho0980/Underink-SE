@@ -125,7 +125,7 @@ Sound* getSound(const char* filePath) {
     for ( int i=0; i<MAX_CACHED_SOUNDS; i++ ) {
         if ( strcmp(soundCache[i].filePath, filePath) == 0 ) {
             printf(
-                "[getSound] '%s' 사운드를 캐시에서 발견했습니다.\n",
+                "[getSound] \x1b[33m'%s'\x1b[0m 사운드를 캐시에서 발견했습니다.\n",
                 filePath
             );
 

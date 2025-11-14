@@ -62,4 +62,11 @@ typedef struct {
     AudioManager*    mgr    ;
 } ThreadArg;
 
+typedef struct { AudioManager* mgr; } ManagerTableUnit;
+typedef struct {
+    int              max    ;
+    int              count  ;
+    ManagerTableUnit table[];
+} ManagerTable;
+
 #endif
