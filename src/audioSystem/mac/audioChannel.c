@@ -52,6 +52,7 @@ typedef struct {
 
 
 extern void updateVolume(float* localCurrVolume, float localBaseVolume, float globalVolume);
+extern void play(AudioUnit* queue, inUserData_t* inUserData, const char mode[8], SampleOrDataOnly data, uint32_t size, int sampleRate, int channels, int bits);
 
 void destroyAllChannelThreads(AudioManager* mgr, int index, bool force);
 void* audioChannel(void* arg);
