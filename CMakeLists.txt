@@ -110,8 +110,20 @@ elseif(WIN32)
     # needs add ASM sources
 endif()
 
-add_executable(totalTest ${AUDIO_SYSTEM_SOURCES} tests_public/totalTest.c)
-add_executable(tutorial ${AUDIO_SYSTEM_SOURCES} tests_public/tutorial.c)
+if(APPLE)
+    set(TEST_PUBLIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests_public/mac)
+elseif(UNIX AND NOT APPLE)
+    if(USING_WSL)
+        set(TEST_PUBLIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests_public/wsl)
+    else()
+        set(TEST_PUBLIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests_public/linux)
+    endif()
+elseif(WIN32)
+    set(TEST_PUBLIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tests_public/win)
+endif()
+
+add_executable(totalTest ${AUDIO_SYSTEM_SOURCES} ${TEST_PUBLIC_PATH}/totalTest.c)
+add_executable(tutorial ${AUDIO_SYSTEM_SOURCES} ${TEST_PUBLIC_PATH}/tutorial.c)
 
 target_link_libraries(totalTest PRIVATE audioTool)
 target_link_libraries(tutorial PRIVATE audioTool)
