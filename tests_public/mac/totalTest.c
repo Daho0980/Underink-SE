@@ -5,9 +5,9 @@
 #include "audioStruct.h"
 
 #include "stdcmd.h"
-#include "queue.h"
-#include "audioTool/management/resource.h"
 
+#include "audioTool/management/resource.h"
+#include "audioSystem/queue.h"
 #include "audioSystem/audioManager.h"
 #include "audioSystem/audioManagerTable.h"
 #include "commandQueue.h"

@@ -37,7 +37,6 @@ add_library(audioTool STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audioEnv.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/commandQueue.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audioTool/management/cache.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/audioTool/management/queue.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audioTool/management/resource.c
 )
 
@@ -56,6 +55,7 @@ if(APPLE)
         ${AUDSYS_DIR}/mac/audioManager.c
         ${AUDSYS_DIR}/mac/audioManagerTable.c
         ${AUDSYS_DIR}/mac/playWav.c
+        ${AUDSYS_DIR}/mac/queue.c
     )
 
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
@@ -84,7 +84,9 @@ elseif(UNIX AND NOT APPLE)
     list(APPEND AUDIO_SYSTEM_SOURCES
         ${AUDSYS_DIR}/linux/audioChannel.c
         ${AUDSYS_DIR}/linux/audioManager.c
+        ${AUDSYS_DIR}/linux/audioManagerTable.c
         ${AUDSYS_DIR}/linux/playWav.c
+        ${AUDSYS_DIR}/linux/queue.c
     )
 
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")

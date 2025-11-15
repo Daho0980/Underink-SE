@@ -68,10 +68,7 @@ int test_Thread() {
 
 int main() {
     printf("\n[ -- main 시작 -- ]\n\n");
-
     testRunner(test_Thread, "test_Thread");
-    
-
     printf("\n[ -- main 종료 -- ]\n");
 
     return 0;
