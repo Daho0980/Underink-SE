@@ -1,7 +1,9 @@
-#include <windows.h>
-
 #include <stdio.h>
 #include <process.h>
+
+#include <windows.h>
+
+#include "audioTool/management/resource.h"
 
 
 int testRunner(int (*test)(), char* name) {
@@ -66,9 +68,18 @@ int test_Thread() {
     return 0;
 }
 
+int test_GetWave() {
+    if ( getSound("assets/sine24.wav") == NULL ) {
+        return 1;
+    }
+
+    return 0;
+}
+
 int main() {
     printf("\n[ -- main 시작 -- ]\n\n");
-    testRunner(test_Thread, "test_Thread");
+    testRunner(test_Thread, "Thread");
+    testRunner(test_GetWave, "GetWave");
     printf("\n[ -- main 종료 -- ]\n");
 
     return 0;
