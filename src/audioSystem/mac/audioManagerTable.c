@@ -26,9 +26,9 @@ ManagerTable* initializeManagerTable(int size) {
         return NULL;
     }
 
-    mgrt->max   = size;
-    mgrt->count = 0   ;
-
+    mgrt->max   = size
+   ;mgrt->count = 0
+   ;
     printf("[initializeManagerTable]\x1b[32m(SUCCESS)\x1b[0m 매니저 테이블이 성공적으로 생성되었습니다.\n");
 
     return mgrt;
