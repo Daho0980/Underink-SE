@@ -11,3 +11,7 @@
 #include "audioStruct.h"
 
 #include "audioEnv.h"
+
+#include "playWav.h"
+#include "commandQueue.h"
+

@@ -18,28 +18,6 @@
 #include "commandQueue.h"
 
 
-#define VOLUME_SCALE 0.0244200244f
-
-struct LocalVol {
-    float baseVolume;
-    float currVolume;
-
-    bool  fadeActive ;
-    float decayFactor;
-    float target     ;
-};
-struct LocalVol LocalVol_init() {
-    struct LocalVol out = {
-        .baseVolume  = 100.0,
-        .currVolume  = 1.0,
-        .fadeActive  = false,
-        .decayFactor = 0.0,
-        .target      = 0.0
-    };
-
-    return out;
-}
-
 typedef struct {
     AudioUnit*        audioUnit ;
     AudioChannelData* data      ;
@@ -49,7 +27,6 @@ typedef struct {
     AudioManager*     mgr       ;
     bool*             hasRequest;
 } CommandHandlerContext;
-
 
 extern void updateVolume(float* localCurrVolume, float localBaseVolume, float globalVolume);
 extern void play(AudioUnit* queue, inUserData_t* inUserData, const char mode[8], SampleOrDataOnly data, uint32_t size, int sampleRate, int channels, int bits);
