@@ -7,7 +7,7 @@
 
 #include "audioSystem/audioChannel.h"
 #include "audioSystem/audioManagerTable.h"
-#include "audioTool/management/queue.h"
+#include "queue.h"
 
 
 AudioManager* initializeManager(ManagerTable* mgrt, const char type[3], const char mode[8], int threadCount);

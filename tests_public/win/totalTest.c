@@ -4,6 +4,21 @@
 #include <process.h>
 
 
+int testRunner(int (*test)(), char* name) {
+    printf("\n[ -- %s 시작 -- ]\n\n", name);
+
+    if ( test() ) {
+        printf("[testRunner]|[\x1b[33m%s\x1b[0m]\x1b[31m(TestFailed)\x1b[0m 테스트가 비정상 종료되었습니다.\n", name);
+
+        return 1;
+    }
+    printf("\n[testRunner]|[\x1b[33m%s\x1b[0m]\x1b[32m(SUCCESS)\x1b[0m 테스트가 정상 종료되었습니다.\n", name);
+
+    printf("\n[ -- %s 종료 -- ]\n\n", name);
+
+    return 0;
+}
+
 unsigned __stdcall threadFunc(void* pParam) {
     int* pThreadNum = (int*)pParam;
     int  threadNum  = *pThreadNum ;
@@ -18,9 +33,7 @@ unsigned __stdcall threadFunc(void* pParam) {
     return 0;
 }
 
-int main() {
-    printf("\n[ -- main 시작 -- ]\n\n");
-
+int test_Thread() {
     HANDLE   hThread ;
     unsigned threadID;
 
@@ -49,6 +62,15 @@ int main() {
     printf("완료.\n");
 
     CloseHandle(hThread);
+
+    return 0;
+}
+
+int main() {
+    printf("\n[ -- main 시작 -- ]\n\n");
+
+    testRunner(test_Thread, "test_Thread");
+    
 
     printf("\n[ -- main 종료 -- ]\n");
 
