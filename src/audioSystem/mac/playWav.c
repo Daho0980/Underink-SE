@@ -46,7 +46,6 @@ OSStatus _AURenderCallback(
    ;uint32_t bytesLeft        = ctx->size - startOffset
    ;
     uint32_t bytesToCopy = MIN(bytesRequirement, bytesLeft);
-    printf("복사할 바이트 크기 : %d\n", bytesToCopy);
 
     uint8_t *outBuffer = (uint8_t*)ioData->mBuffers[0].mData;
     memcpy(outBuffer, ctx->audioReadContext.origin+startOffset, bytesToCopy);

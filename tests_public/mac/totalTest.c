@@ -2,15 +2,15 @@
 #include <unistd.h>
 
 #include "platform.h"
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 #include "stdcmd.h"
-#include "audioTool/management/queue.h"
 #include "audioTool/management/resource.h"
 
+#include "commandQueue.h"
+#include "audioSystem/queue.h"
 #include "audioSystem/audioManager.h"
 #include "audioSystem/audioManagerTable.h"
-#include "commandQueue.h"
 
 
 int main() {

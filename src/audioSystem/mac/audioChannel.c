@@ -11,6 +11,7 @@
 
 #include "stdcmd.h"
 #include "audioSystemArgs.h"
+#include "audioSystem/audioChannel.h"
 
 #include "audioEnv.h"
 
@@ -28,11 +29,12 @@ typedef struct {
     bool*             hasRequest;
 } CommandHandlerContext;
 
+extern struct LocalVol LocalVol_init();
 extern void updateVolume(float* localCurrVolume, float localBaseVolume, float globalVolume);
 extern void play(AudioUnit* audioUnit, inUserData_t* inUserData, const char mode[8], AudioModeUnion data, uint32_t size, int sampleRate, int channels, int bits);
 
 void destroyAllChannelThreads(AudioManager* mgr, int index, bool force);
-void* audioChannel(void* arg);
+AudioChannel_t* audioChannel(void* arg);
 
 static void _cleanupAudioUnit(AudioUnit* audioUnit);
 static void _commandHandler_ALLINONE(uint32_t cmd, CommandHandlerContext* context);
@@ -65,7 +67,7 @@ void destroyAllChannelThreads(AudioManager* mgr, int index, bool force) {
     printf("[destroyAllChannelThreads]\x1b[32m(SUCCESS)\x1b[0m 모든 스레드가 파괴되었습니다.\n");
 }
 
-void* audioChannel(void* arg) {
+AudioChannel_t* audioChannel(void* arg) {
    ;AudioChannelData* data = (AudioChannelData*)((ThreadArg*)arg)->thread
    ;AudioManager*     mgr  = (AudioManager*)    ((ThreadArg*)arg)->mgr
    ;
