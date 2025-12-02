@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 
 typedef struct AudioManager_t AudioManager_t;

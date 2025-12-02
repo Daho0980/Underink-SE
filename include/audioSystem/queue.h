@@ -1,7 +1,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 
 int queuePush(AudioManager* mgr, AudioRequest req);

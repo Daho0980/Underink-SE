@@ -10,7 +10,7 @@
 #include <AudioUnit/AudioUnit.h>
 
 #include "stdcmd.h"
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 #include "audioEnv.h"
 
@@ -29,7 +29,7 @@ typedef struct {
 } CommandHandlerContext;
 
 extern void updateVolume(float* localCurrVolume, float localBaseVolume, float globalVolume);
-extern void play(AudioUnit* queue, inUserData_t* inUserData, const char mode[8], SampleOrDataOnly data, uint32_t size, int sampleRate, int channels, int bits);
+extern void play(AudioUnit* audioUnit, inUserData_t* inUserData, const char mode[8], AudioModeUnion data, uint32_t size, int sampleRate, int channels, int bits);
 
 void destroyAllChannelThreads(AudioManager* mgr, int index, bool force);
 void* audioChannel(void* arg);
@@ -37,10 +37,10 @@ void* audioChannel(void* arg);
 static void _cleanupAudioUnit(AudioUnit* audioUnit);
 static void _commandHandler_ALLINONE(uint32_t cmd, CommandHandlerContext* context);
 static void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context);
-static SampleOrDataOnly _getSoundData_ALLINONE(uint8_t* audioData);
-static SampleOrDataOnly _getSoundData_SAMPLING(uint8_t* audioData);
-static void _playMode_ALLINONE(AudioUnit* audioUnit, inUserData_t* inUserData, SampleOrDataOnly* soundData, Sound* sound);
-static void _playMode_SAMPLING(AudioUnit* audioUnit, inUserData_t* inUserData, SampleOrDataOnly* soundData, Sound* sound);
+static AudioModeUnion _getSoundData_ALLINONE(uint8_t* audioData);
+static AudioModeUnion _getSoundData_SAMPLING(uint8_t* audioData);
+static void _playMode_ALLINONE(AudioUnit* audioUnit, inUserData_t* inUserData, AudioModeUnion* soundData, Sound* sound);
+static void _playMode_SAMPLING(AudioUnit* audioUnit, inUserData_t* inUserData, AudioModeUnion* soundData, Sound* sound);
 
 
 void destroyAllChannelThreads(AudioManager* mgr, int index, bool force) {
@@ -86,13 +86,13 @@ void* audioChannel(void* arg) {
    ;ctx.hasRequest = &data->hasRequest
    ;
     void (*playmode)(
-        AudioUnit*        audioUnit ,
-        inUserData_t*     inUserData,
-        SampleOrDataOnly* soundData ,
-        Sound*            sound
+        AudioUnit*      audioUnit ,
+        inUserData_t*   inUserData,
+        AudioModeUnion* soundData ,
+        Sound*          sound
     )
-   ;SampleOrDataOnly (*getSoundData)(uint8_t* audioData)
-   ;void             (*commandHandler)(uint32_t cmd, CommandHandlerContext* context)
+   ;AudioModeUnion (*getSoundData)(uint8_t* audioIndex)
+   ;void           (*commandHandler)(uint32_t cmd, CommandHandlerContext* context)
    ;
     if ( memcmp(mgr->mode, "ALLINONE", 8) == 0 ) {
         playmode       = _playMode_ALLINONE
@@ -157,7 +157,7 @@ void* audioChannel(void* arg) {
            ;inUserData.pause      = &pause
            ;inUserData.volume     = &localVol.currVolume
            ;
-            SampleOrDataOnly playChunk = getSoundData(soundData->audioData);
+            AudioModeUnion playChunk = getSoundData(soundData->origin);
     
             playmode(
                 &audioUnit,
@@ -210,7 +210,7 @@ void* audioChannel(void* arg) {
 
         finish_request:
             data->hasRequest = false;
-            free(data->request.soundData->audioData);
+            free(data->request.soundData->origin);
             free(data->request.soundData);
             atomic_store(&pause, false);
             atomic_store(&finished, false);
@@ -324,17 +324,17 @@ void _commandHandler_SAMPLING(uint32_t cmd, CommandHandlerContext* context) {
     return;
 }
 
-SampleOrDataOnly _getSoundData_ALLINONE(uint8_t* audioData) {
-    SampleOrDataOnly soundData = { .dataOnly=audioData };
+AudioModeUnion _getSoundData_ALLINONE(uint8_t* audioIndex) {
+    AudioModeUnion soundData = { .audioOrigin=audioIndex };
 
     return soundData;
 }
-SampleOrDataOnly _getSoundData_SAMPLING(uint8_t* audioData) {
-    SampleSound a_sampleSound = sampleSound_init(
-        audioData,
-        gAudioEnv.samplingChunkSize
+AudioModeUnion _getSoundData_SAMPLING(uint8_t* audioIndex) {
+    AudioFrameConfig a_config = initAudioFrameConfig(
+        audioIndex,
+        gAudioEnv.samplingFrameSize
     );
-    SampleOrDataOnly soundData = { .sampleData=a_sampleSound };
+    AudioModeUnion soundData = { .config=a_config };
 
     return soundData;
 }
@@ -342,7 +342,7 @@ SampleOrDataOnly _getSoundData_SAMPLING(uint8_t* audioData) {
 void _playMode_ALLINONE(
     AudioUnit*        audioUnit ,
     inUserData_t*     inUserData,
-    SampleOrDataOnly* soundData ,
+    AudioModeUnion* soundData ,
     Sound*            sound
 ) {
     play(
@@ -359,7 +359,7 @@ void _playMode_ALLINONE(
 void _playMode_SAMPLING(
     AudioUnit*        audioUnit ,
     inUserData_t*     inUserData,
-    SampleOrDataOnly* soundData ,
+    AudioModeUnion* soundData ,
     Sound*            sound
 ) {
     play(

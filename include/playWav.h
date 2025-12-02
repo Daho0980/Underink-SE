@@ -5,16 +5,19 @@
 #include <stdbool.h>
 #include <stdatomic.h>
 
-#include "soundStruct.h"
+#include <AudioUnit/AudioUnit.h>
+
+#include "audioBaseTypes.h"
 
 
 typedef struct {
-    atomic_bool* finishFlag;
-    atomic_bool* pause     ;
-    SampleSound sampleSound;
-    uint32_t    size       ;
-    int         bits       ;
-    float*      volume     ;
+    atomic_bool* finishFlag          ;
+    atomic_bool* pause               ;
+    AudioReadContext audioReadContext;
+    uint32_t     size                ;
+    int          bits                ;
+    int          channels            ;
+    float*       volume              ;
 } inUserData_t;
 
 #endif

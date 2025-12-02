@@ -6,8 +6,8 @@
 #include <pthread.h>
 
 #include "constants.h"
-#include "soundStruct.h"
-#include "audioStruct.h"
+#include "audioBaseTypes.h"
+#include "audioSystemArgs.h"
 
 
 int queuePush(AudioManager* mgr, AudioRequest req) {

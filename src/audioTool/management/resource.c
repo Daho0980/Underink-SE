@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "soundStruct.h"
 #include "wavFormat.h"
+#include "audioBaseTypes.h"
 
 #include "management/cache_internal.h"
 
@@ -75,13 +75,13 @@ Sound* loadSound(const char* filePath) {
         fseek(fp, data.subchunk2Size, SEEK_CUR);
     }
 
-    uint8_t* audioData = malloc(data.subchunk2Size);
-    fread(audioData, data.subchunk2Size, 1, fp);
+    uint8_t* index = malloc(data.subchunk2Size);
+    fread(index, data.subchunk2Size, 1, fp);
     fclose(fp);
 
     Sound* sound = malloc(sizeof(Sound));
     if ( sound ) {
-        sound->audioData  = audioData         ;
+        sound->origin     = index             ;
         sound-> size      = data.subchunk2Size;
         sound->sampleRate = fmt.sampleRate    ;
         sound->channels   = fmt.numChannels   ;
@@ -97,15 +97,15 @@ Sound* _copyFromOriginal(Sound *cached) {
     Sound *newSound = malloc(sizeof(Sound));
     if ( newSound == NULL ) return NULL;
 
-    newSound->audioData = malloc(cached->size);
-    if ( newSound->audioData == NULL ) {
+    newSound->origin = malloc(cached->size);
+    if ( newSound->origin == NULL ) {
         free(newSound);
 
         return NULL;
     }
 
     memcpy(
-        newSound->audioData, cached->audioData,
+        newSound->origin, cached->origin,
         cached->size
     );
     newSound->size       = cached->size
@@ -171,7 +171,7 @@ Sound* getSound(const char* filePath) {
     return outSound;
 }
 
-void freeSound(Sound* sound) {
-    free(sound->audioData);
-    free(sound);
+void freeSound(Sound* soundData) {
+    free(soundData->origin);
+    free(soundData);
 }

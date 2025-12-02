@@ -1,7 +1,7 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#include "soundStruct.h"
+#include "audioBaseTypes.h"
 
 
 #define MAX_CACHED_SOUNDS 16

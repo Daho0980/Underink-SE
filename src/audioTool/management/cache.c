@@ -19,8 +19,8 @@ void freeAllCache() {
 
     for ( int i=0; i<cacheCount; i++ ) {
         if ( soundCache[i].soundData != NULL ) {
-            if ( soundCache[i].soundData->audioData != NULL ) {
-                free(soundCache[i].soundData->audioData);
+            if ( soundCache[i].soundData->origin != NULL ) {
+                free(soundCache[i].soundData->origin);
             }
 
             free(soundCache[i].soundData);

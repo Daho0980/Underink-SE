@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 #include "audioSystem/audioManager.h"
 

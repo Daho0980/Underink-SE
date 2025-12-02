@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 #include "audioSystem/queue.h"
 #include "audioSystem/audioChannel.h"

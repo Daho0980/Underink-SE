@@ -2,7 +2,7 @@
 #include <unistd.h>
 
 #include "platform.h"
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 #include "stdcmd.h"
 #include "audioTool/management/queue.h"

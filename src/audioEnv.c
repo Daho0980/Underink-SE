@@ -2,9 +2,9 @@
 
 
 AudioEnvSettings gAudioEnv = {
-    .samplingChunkSize = 1024
+    .samplingFrameSize = 512
 };
 
-void setSamplingChunkSize(int size) {
-    gAudioEnv.samplingChunkSize = size;
+void setSamplingFrameSize(int size) {
+    gAudioEnv.samplingFrameSize = size;
 }

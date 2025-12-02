@@ -2,11 +2,11 @@
 #define AUDIO_ENV_H
 
 typedef struct {
-    int samplingChunkSize;
+    int samplingFrameSize;
 } AudioEnvSettings;
 
 extern AudioEnvSettings gAudioEnv;
 
-void setSamplingChunkSize(int size);
+void setSamplingFrameSize(int size);
 
 #endif

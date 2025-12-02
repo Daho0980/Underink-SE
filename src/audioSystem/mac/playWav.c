@@ -9,7 +9,7 @@
 
 #include "playWav.h"
 
-#include "soundStruct.h"
+#include "audioBaseTypes.h"
 #include "wavFormat.h"
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
@@ -41,14 +41,15 @@ OSStatus _AURenderCallback(
         return noErr;
     }
 
-    uint32_t bytesPerFrame = ctx->sampleSound.chunkSize
-   ;uint64_t startOffset   = ctx->sampleSound.offset
-   ;uint32_t bytesLeft     = ctx->size - startOffset
+    uint32_t bytesRequirement = (inNumberFrames*(ctx->channels*(ctx->bits/8)))
+   ;uint64_t startOffset      = ctx->audioReadContext.offset
+   ;uint32_t bytesLeft        = ctx->size - startOffset
    ;
-    uint32_t bytesToCopy = MIN((inNumberFrames*bytesPerFrame), bytesLeft);
+    uint32_t bytesToCopy = MIN(bytesRequirement, bytesLeft);
+    printf("복사할 바이트 크기 : %d\n", bytesToCopy);
 
     uint8_t *outBuffer = (uint8_t*)ioData->mBuffers[0].mData;
-    memcpy(outBuffer, ctx->sampleSound.audioData+startOffset, bytesToCopy);
+    memcpy(outBuffer, ctx->audioReadContext.origin+startOffset, bytesToCopy);
 
     // TODO: WE NEED FILTER CHAIN HERE
 
@@ -59,12 +60,12 @@ OSStatus _AURenderCallback(
         *ctx->volume
     );
     
-    ctx->sampleSound.offset += bytesToCopy;
+    ctx->audioReadContext.offset += bytesToCopy;
 
-    if ( bytesToCopy < (inNumberFrames*bytesPerFrame) ) {
+    if ( bytesToCopy < bytesRequirement ) {
         memset(
             outBuffer+bytesToCopy, 0,
-            (inNumberFrames*bytesPerFrame)-bytesToCopy
+            bytesRequirement-bytesToCopy
         );
 
         atomic_store(ctx->finishFlag, true);
@@ -78,18 +79,22 @@ void play(AudioUnit* audioUnit,
           inUserData_t* inUserData,
           const char   mode[8]    ,
 
-          SampleOrDataOnly data      ,
-          uint32_t         size      ,
-          int              sampleRate,
-          int              channels  ,
-          int              bits       ) {
+          AudioModeUnion data      ,
+          uint32_t       size      ,
+          int            sampleRate,
+          int            channels  ,
+          int            bits       ) {
     printf("play 함수 호출됨.\n");
 
+    int frame;
+
     if ( strcmp(mode, "ALLINONE") == 0 ) {
-        inUserData->sampleSound.audioData = data.dataOnly;
+        inUserData->audioReadContext.origin = data.audioOrigin;
+        frame = 0;
     }
     else if ( strcmp(mode, "SAMPLING") == 0 ) {
-        inUserData->sampleSound.audioData = data.sampleData.audioData;
+        inUserData->audioReadContext.origin = data.config.origin;
+        frame = data.config.frameSize;
     }
     else {
         char tmp[9];
@@ -101,12 +106,13 @@ void play(AudioUnit* audioUnit,
         );
         return;
     }
-    inUserData->sampleSound.offset = 0
-   ;inUserData->size               = size
-   ;inUserData->bits               = bits
+    inUserData->audioReadContext.offset = 0
+   ;inUserData->size                    = size
+   ;inUserData->bits                    = bits
+   ;inUserData->channels                = channels
    ;
     printf("오디오 데이터 :\n");
-    printf("\t데이터 위치 : \x1b[32m%p\x1b[0m\n", inUserData->sampleSound.audioData);
+    printf("\t데이터 위치 : \x1b[32m%p\x1b[0m\n", inUserData->audioReadContext.origin);
     printf("\t크기        : \x1b[32m%d\x1b[0m\n", size);
     printf("\t샘플레이트  : \x1b[32m%d\x1b[0m\n", sampleRate);
     printf("\t채널 수     : \x1b[32m%d\x1b[0m\n", channels);
@@ -158,7 +164,6 @@ void play(AudioUnit* audioUnit,
             return;
     }
     clientFormat.mBytesPerPacket = clientFormat.mBytesPerFrame;
-    inUserData->sampleSound.chunkSize = clientFormat.mBytesPerFrame;
     printf("완료\n");
 
     AudioComponentDescription desc = {0};
@@ -189,6 +194,23 @@ void play(AudioUnit* audioUnit,
         );
 
         return;
+    }
+    printf("완료\n");
+
+    printf("최대 프레임 설정 중... ");
+    status = AudioUnitSetProperty(
+        *audioUnit,
+        kAudioUnitProperty_MaximumFramesPerSlice,
+        kAudioUnitScope_Global,
+        0,
+        &frame,
+        sizeof(frame)
+    );
+    if ( status != noErr ) {
+        fprintf(stderr,
+            "\n[play]\x1b[31m(SetMaximumFramesFailed)\x1b[0m 최대 프레임 설정 실패: %d",
+            (int)status
+        );
     }
     printf("완료\n");
 

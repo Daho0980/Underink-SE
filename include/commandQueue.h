@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "stdcmd.h"
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 
 /**

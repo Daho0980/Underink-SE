@@ -1,5 +1,5 @@
-#ifndef AUDIO_STRUCT_H
-#define AUDIO_STRUCT_H
+#ifndef AUDIO_SYSTEM_ARGS_H
+#define AUDIO_SYSTEM_ARGS_H
 
 #include <time.h>
 #include <float.h>
@@ -8,7 +8,7 @@
 #include <stdatomic.h>
 
 #include "constants.h"
-#include "soundStruct.h"
+#include "audioBaseTypes.h"
 
 
 #define MAX_COMMAND_QUEUE 4

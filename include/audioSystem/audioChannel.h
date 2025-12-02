@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 
 #define VOLUME_SCALE 0.0244200244f

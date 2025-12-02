@@ -1,7 +1,7 @@
 #ifndef AUDIO_MANAGER_TABLE_H
 #define AUDIO_MANAGER_TABLE_H
 
-#include "audioStruct.h"
+#include "audioSystemArgs.h"
 
 
 ManagerTable* initializeManagerTable(int size);
