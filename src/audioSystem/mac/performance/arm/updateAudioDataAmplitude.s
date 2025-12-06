@@ -2,59 +2,73 @@
     .global _updateAudioDataAmplitude
     .p2align 4
 
+// w0 : *target
+// w1 : bit depth
+// w2 : size
+// w3 : read' bits in a loop
+// x4 : index
+// w5 : left bits from size(w2) & calcReg
+// w6 : calcReg1(only in scalar_24 label)
+// w7 : calcReg2(only in scalar_24 label)
+// w8 : scalar trigger
+// x9 : vector label address
+// x10 : scalar label address
+// w11 : spectrum max
+// w12 : spectrum min
+
+// s0 : volume
 _updateAudioDataAmplitude:
     mov        w3, #0
     mov        w8, #0
-    mov        w9, w1
 
-    cmp        w9, #1
+    cmp        w1, #1
     b.eq       pre_8
-    cmp        w9, #2
+    cmp        w1, #2
     b.eq       pre_16
-    cmp        w9, #3
+    cmp        w1, #3
     b.eq       pre_24
-    cmp        w9, #4
+    cmp        w1, #4
     b.eq       pre_32
 
     ret
 
     pre_8:
-        adr        x10, vector_8
-        adr        x11, scalar_8
+        adr        x9,  vector_8
+        adr        x10, scalar_8
 
-        mov        w12, #127
-        mov        w13, #-128
+        mov        w11, #127
+        mov        w12, #-128
+        dup        v11.4s, w11
         dup        v12.4s, w12
-        dup        v13.4s, w13
 
         b          loop
     pre_16:
-        adr        x10, vector_16
-        adr        x11, scalar_16
+        adr        x9, vector_16
+        adr        x10, scalar_16
 
-        mov        w12, #32767
-        mov        w13, #-32768
+        mov        w11, #32767
+        mov        w12, #-32768
+        dup        v11.4s, w11
         dup        v12.4s, w12
-        dup        v13.4s, w13
 
         b          loop
     pre_24:
-        adr        x11, scalar_24
+        adr        x10, scalar_24
 
-        ldr        w12, =0x7FFFFF
-        ldr        w13, =-0x800000
+        ldr        w11, =0x7FFFFF
+        ldr        w12, =-0x800000
 
         mov        w8, #1
 
         b          loop
     pre_32:
-        adr        x10, vector_32
-        adr        x11, scalar_32
+        adr        x9, vector_32
+        adr        x10, scalar_32
 
-        ldr        w12, =0x7FFFFFFF
-        ldr        w13, =-0x80000000
+        ldr        w11, =0x7FFFFFFF
+        ldr        w12, =-0x80000000
+        dup        v11.4s, w11
         dup        v12.4s, w12
-        dup        v13.4s, w13
 
         b          loop
 
@@ -64,7 +78,7 @@ loop:
 
     add        x4, x0, x3
 
-    cmp        w9, #3
+    cmp        w1, #24
     b.eq       do_scalar
     cbnz       w8, do_scalar
 
@@ -73,16 +87,16 @@ loop:
     cset       w8, lt
 
     cbnz       w8, do_scalar
-    br         x10
+    br         x9
 
     do_scalar:
-        br         x11
+        br         x10
 continue_loop:
     cmp        w8, #0
     b.eq       inc_vector
 
     inc_scalar:
-        add        w3, w3, w9
+        add        w3, w3, w1
         b          loop
     inc_vector:
         add        w3, w3, #16
@@ -117,14 +131,14 @@ vector_8:
     fcvtzs     v5.4s, v5.4s
     fcvtzs     v6.4s, v6.4s
 
-    smax       v3.4s, v3.4s, v13.4s
-    smin       v3.4s, v3.4s, v12.4s
-    smax       v4.4s, v4.4s, v13.4s
-    smin       v4.4s, v4.4s, v12.4s
-    smax       v5.4s, v5.4s, v13.4s
-    smin       v5.4s, v5.4s, v12.4s
-    smax       v6.4s, v6.4s, v13.4s
-    smin       v6.4s, v6.4s, v12.4s
+    smax       v3.4s, v3.4s, v12.4s
+    smin       v3.4s, v3.4s, v11.4s
+    smax       v4.4s, v4.4s, v12.4s
+    smin       v4.4s, v4.4s, v11.4s
+    smax       v5.4s, v5.4s, v12.4s
+    smin       v5.4s, v5.4s, v11.4s
+    smax       v6.4s, v6.4s, v12.4s
+    smin       v6.4s, v6.4s, v11.4s
 
     // 32 -> 8
     sqxtn      v1.4h, v3.4s
@@ -143,10 +157,10 @@ scalar_8:
     fmul       s1, s1, s0
     fcvtzs     w5, s1
 
+    cmp        w5, w11
+    csel       w5, w11, w5, gt
     cmp        w5, w12
-    csel       w5, w12, w5, gt
-    cmp        w5, w13
-    csel       w5, w13, w5, lt
+    csel       w5, w12, w5, lt
 
     strb       w5, [x4]
 
@@ -166,10 +180,10 @@ vector_16:
     fcvtzs     v1.4s, v1.4s
     fcvtzs     v2.4s, v2.4s
 
-    smax       v1.4s, v1.4s, v13.4s
-    smin       v1.4s, v1.4s, v12.4s
-    smax       v2.4s, v2.4s, v13.4s
-    smin       v2.4s, v2.4s, v12.4s
+    smax       v1.4s, v1.4s, v12.4s
+    smin       v1.4s, v1.4s, v11.4s
+    smax       v2.4s, v2.4s, v12.4s
+    smin       v2.4s, v2.4s, v11.4s
 
     sqxtn      v7.4h, v1.4s
     sqxtn2     v7.8h, v2.4s
@@ -183,10 +197,10 @@ scalar_16:
     fmul       s1, s1, s0
     fcvtzs     w5, s1
 
+    cmp        w5, w11
+    csel       w5, w11, w5, gt
     cmp        w5, w12
-    csel       w5, w12, w5, gt
-    cmp        w5, w13
-    csel       w5, w13, w5, lt
+    csel       w5, w12, w5, lt
 
     strh       w5, [x4]
 
@@ -205,10 +219,10 @@ scalar_24:
     fmul       s1, s1, s0
     fcvtzs     w5, s1
 
+    cmp        w5, w11
+    csel       w5, w11, w5, gt
     cmp        w5, w12
-    csel       w5, w12, w5, gt
-    cmp        w5, w13
-    csel       w5, w13, w5, lt
+    csel       w5, w12, w5, lt
 
     strb       w5, [x4]
     lsr        w6, w5, #8
@@ -224,8 +238,8 @@ vector_32:
     fmul       v1.4s, v1.4s, v0.s[0]
     fcvtzs     v2.4s, v1.4s
 
-    smax       v2.4s, v2.4s, v13.4s
-    smin       v2.4s, v2.4s, v12.4s
+    smax       v2.4s, v2.4s, v12.4s
+    smin       v2.4s, v2.4s, v11.4s
 
     st1        {v2.4s}, [x4]
 
@@ -236,10 +250,10 @@ scalar_32:
     fmul       s1, s1, s0
     fcvtzs     w5, s1
 
+    cmp        w5, w11
+    csel       w5, w11, w5, gt
     cmp        w5, w12
-    csel       w5, w12, w5, gt
-    cmp        w5, w13
-    csel       w5, w13, w5, lt
+    csel       w5, w12, w5, lt
 
     str        w5, [x4]
 
