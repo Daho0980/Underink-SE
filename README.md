@@ -1,5 +1,5 @@
 <table align="center"><tr><td align="center" width="10000">
-<img width="2560" height="1440" alt="Underink logo" src="https://github.com/user-attachments/assets/85df3fdc-f45a-4795-954c-c40d69a145e1" align="center" alt="logo">
+<img width="2560" height="1440" alt="Underink logo" src="https://github.com/user-attachments/assets/2c98c4d1-be69-413f-92dd-2db2b113317e" align="center">
 
 # Underink SE
 
