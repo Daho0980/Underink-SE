@@ -15,8 +15,8 @@
 
 #include "audioEnv.h"
 
-#include "playWav.h"
 #include "commandQueue.h"
+#include "audioSystem/playWav.h"
 
 
 typedef struct {
@@ -31,7 +31,7 @@ typedef struct {
 
 extern struct LocalVol LocalVol_init();
 extern void updateVolume(float* localCurrVolume, float localBaseVolume, float globalVolume);
-extern void play(AudioUnit* audioUnit, inUserData_t* inUserData, const char mode[8], AudioModeUnion data, uint32_t size, int sampleRate, int channels, int bits);
+extern void play(AudioUnit* audioUnit, inUserData_t* inUserData, const char mode[8], AudioModeUnion data, uint32_t size, int sampleRate, int channels, int bitDepth);
 
 void destroyAllChannelThreads(AudioManager* mgr, int index, bool force);
 AudioChannel_t* audioChannel(void* arg);
@@ -155,9 +155,11 @@ AudioChannel_t* audioChannel(void* arg) {
             pthread_mutex_unlock(&data->mutex);
 
             inUserData_t inUserData;
-            inUserData.finishFlag = &finished
+            inUserData.mgr        = mgr
+           ;inUserData.finishFlag = &finished
            ;inUserData.pause      = &pause
-           ;inUserData.volume     = &localVol.currVolume
+           ;inUserData.currVol    = &localVol.currVolume
+           ;inUserData.reflVol    = &localVol.reflectedVolume
            ;
             AudioModeUnion playChunk = getSoundData(soundData->origin);
     
@@ -342,10 +344,10 @@ AudioModeUnion _getSoundData_SAMPLING(uint8_t* audioIndex) {
 }
 
 void _playMode_ALLINONE(
-    AudioUnit*        audioUnit ,
-    inUserData_t*     inUserData,
+    AudioUnit*      audioUnit ,
+    inUserData_t*   inUserData,
     AudioModeUnion* soundData ,
-    Sound*            sound
+    Sound*          sound
 ) {
     play(
         audioUnit,
@@ -355,7 +357,7 @@ void _playMode_ALLINONE(
         sound->size,
         sound->sampleRate,
         sound->channels,
-        sound->bits
+        sound->bitDepth
     );
 }
 void _playMode_SAMPLING(
@@ -372,6 +374,6 @@ void _playMode_SAMPLING(
         sound->size,
         sound->sampleRate,
         sound->channels,
-        sound->bits
+        sound->bitDepth
     );
 }

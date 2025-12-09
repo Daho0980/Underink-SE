@@ -85,7 +85,7 @@ Sound* loadSound(const char* filePath) {
         sound-> size      = data.subchunk2Size;
         sound->sampleRate = fmt.sampleRate    ;
         sound->channels   = fmt.numChannels   ;
-        sound-> bits      = fmt.bitsPerSample ;
+        sound->bitDepth   = fmt.bitsPerSample ;
     }
     printf("[loadSound]\x1b[32m(SUCCESS)\x1b[0m 데이터를 성공적으로 불러왔습니다.\n");
 
@@ -111,7 +111,7 @@ Sound* _copyFromOriginal(Sound *cached) {
     newSound->size       = cached->size
    ;newSound->sampleRate = cached->sampleRate
    ;newSound->channels   = cached->channels
-   ;newSound->bits       = cached->bits
+   ;newSound->bitDepth   = cached->bitDepth
    ;
     printf("[_copyFromOriginal]\x1b[32m(SUCCESS)\x1b[0m 복제된 데이터를 반환합니다.\n");
 

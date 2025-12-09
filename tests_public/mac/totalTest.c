@@ -7,6 +7,7 @@
 #include "stdcmd.h"
 #include "audioTool/management/resource.h"
 
+#include "easing.h"
 #include "commandQueue.h"
 #include "audioSystem/queue.h"
 #include "audioSystem/audioManager.h"
@@ -20,8 +21,8 @@ int main() {
     AudioManager* dupmgr = setBGMManager(table);
     unregisterAndDestroyManager(table, bgmmgr, true);
 
-    AudioManager* sfx = initializeManager(table, "SFX", "ALLINONE", 2);
-    AudioManager* mgr = initializeManager(table, "TST", "SAMPLING", 1);
+    AudioManager* sfx = initializeManager(table, "SFX", "ALLINONE", 2, NULL);
+    AudioManager* mgr = initializeManager(table, "TST", "SAMPLING", 1, "smootherstep");
 
     enqueueRequest(
         sfx,
@@ -48,7 +49,7 @@ int main() {
     );
     enqueueRequest(
         mgr,
-        getSound("assets/test2.wav"),
+        getSound("assets/20251126_offvoc.wav"),
         "music", NULL
     );
     usleep(3000000);
@@ -71,6 +72,12 @@ int main() {
     printf("볼륨이 100%%로 재설정됨\n");
     commandPush(&mgr->threads[0], pkcmd_u32(cmd_fade(0, 9000)));
     printf("페이드 적용됨\n");
+    sleep(9);
+    commandPush(&mgr->threads[0], pkcmd_u32(cmd_fade(4095, 9000)));
+    printf("페이드 적용안됨 >:)\n");
+    sleep(9);
+    commandPush(&mgr->threads[0], pkcmd_u32(cmd_fade(0, 9000)));
+    printf("페이드 다시 적용됨 <:(\n");
 
     destroyManagerTable(table, false);
     printf("\n[ -- main 종료 -- ]\n\n");

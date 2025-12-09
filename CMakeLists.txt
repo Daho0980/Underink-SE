@@ -33,6 +33,7 @@ endif()
 
 
 add_library(audioTool STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/easing.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stdcmd.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/audioEnv.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/commandQueue.c
@@ -62,20 +63,32 @@ if(APPLE)
         list(APPEND AUDIO_SYSTEM_SOURCES
             ${AUDSYS_DIR}/mac/performance/arm/updateVolume.s
             ${AUDSYS_DIR}/mac/performance/arm/updateAudioDataAmplitude.s
+            ${AUDSYS_DIR}/mac/performance/arm/easing/linear.s
+            ${AUDSYS_DIR}/mac/performance/arm/easing/smoothstep.s
+            ${AUDSYS_DIR}/mac/performance/arm/easing/smootherstep.s
         )
         set_source_files_properties(
             ${AUDSYS_DIR}/mac/performance/arm/updateVolume.s
             ${AUDSYS_DIR}/mac/performance/arm/updateAudioDataAmplitude.s
+            ${AUDSYS_DIR}/mac/performance/arm/easing/linear.s
+            ${AUDSYS_DIR}/mac/performance/arm/easing/smoothstep.s
+            ${AUDSYS_DIR}/mac/performance/arm/easing/smootherstep.s
             PROPERTIES LANGUAGE ASM
         )
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
         list(APPEND AUDIO_SYSTEM_SOURCES
             ${AUDSYS_DIR}/mac/performance/intel/updateVolume.s
             ${AUDSYS_DIR}/mac/performance/intel/updateAudioDataAmplitude.s
+            ${AUDSYS_DIR}/mac/performance/intel/easing/linear.s
+            ${AUDSYS_DIR}/mac/performance/intel/easing/smoothstep.s
+            ${AUDSYS_DIR}/mac/performance/intel/easing/smootherstep.s
         )
         set_source_files_properties(
             ${AUDSYS_DIR}/mac/performance/intel/updateVolume.s
             ${AUDSYS_DIR}/mac/performance/intel/updateAudioDataAmplitude.s
+            ${AUDSYS_DIR}/mac/performance/intel/easing/linear.s
+            ${AUDSYS_DIR}/mac/performance/intel/easing/smoothstep.s
+            ${AUDSYS_DIR}/mac/performance/intel/easing/smootherstep.s
             PROPERTIES LANGUAGE ASM
         )
     endif()

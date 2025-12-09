@@ -3,7 +3,6 @@
     .p2align 4
 // This easing function follows the following formula:
 // f(t) = (t**2) * (3-(t*2))
-// In this formula, valid results can be obtained when t is a float value between 0 and 1.
 
 // s0 : t && out
 // s1 : start

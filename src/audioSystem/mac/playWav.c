@@ -7,7 +7,9 @@
 
 #include <AudioUnit/AudioUnit.h>
 
-#include "playWav.h"
+#include "audioSystem/playWav.h"
+
+#include "easing.h"
 
 #include "audioBaseTypes.h"
 #include "wavFormat.h"
@@ -15,7 +17,9 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 
-extern void updateAudioDataAmplitude(uint8_t* target, int bits, uint32_t size, float volume);
+extern void updateAudioDataAmplitude(uint8_t* origin, uint32_t size, int sampleRate, int channels, int bitDepth, float* reflected, float target, easingFunc easing);
+// In this case, 'reflected' is the volume last applied to the previous chunk, and 'target' is the volume to be reached.
+// As an internal variable, ctx->volume is distinguished as target.
 
 OSStatus _AURenderCallback(
     void                       *inRefCon     ,
@@ -41,22 +45,26 @@ OSStatus _AURenderCallback(
         return noErr;
     }
 
-    uint32_t bytesRequirement = (inNumberFrames*(ctx->channels*(ctx->bits/8)))
+    uint32_t bytesRequirement = (inNumberFrames*(ctx->channels*(ctx->bitDepth/8)))
    ;uint64_t startOffset      = ctx->audioReadContext.offset
    ;uint32_t bytesLeft        = ctx->size - startOffset
    ;
     uint32_t bytesToCopy = MIN(bytesRequirement, bytesLeft);
 
-    uint8_t *outBuffer = (uint8_t*)ioData->mBuffers[0].mData;
+    uint8_t* outBuffer = (uint8_t*)ioData->mBuffers[0].mData;
     memcpy(outBuffer, ctx->audioReadContext.origin+startOffset, bytesToCopy);
 
     // TODO: WE NEED FILTER CHAIN HERE
 
     updateAudioDataAmplitude(
         outBuffer,
-        ctx->bits/8,
         bytesToCopy,
-        *ctx->volume
+        ctx->sampleRate,
+        ctx->channels,
+        ctx->bitDepth,
+        ctx->reflVol,
+        *ctx->currVol,
+        ctx->mgr->rampEasing.func
     );
     
     ctx->audioReadContext.offset += bytesToCopy;
@@ -82,7 +90,7 @@ void play(AudioUnit* audioUnit,
           uint32_t       size      ,
           int            sampleRate,
           int            channels  ,
-          int            bits       ) {
+          int            bitDepth   ) {
     printf("play 함수 호출됨.\n");
 
     int frame;
@@ -107,15 +115,16 @@ void play(AudioUnit* audioUnit,
     }
     inUserData->audioReadContext.offset = 0
    ;inUserData->size                    = size
-   ;inUserData->bits                    = bits
+   ;inUserData->bitDepth                = bitDepth
    ;inUserData->channels                = channels
+   ;inUserData->sampleRate              = sampleRate
    ;
     printf("오디오 데이터 :\n");
     printf("\t데이터 위치 : \x1b[32m%p\x1b[0m\n", inUserData->audioReadContext.origin);
     printf("\t크기        : \x1b[32m%d\x1b[0m\n", size);
     printf("\t샘플레이트  : \x1b[32m%d\x1b[0m\n", sampleRate);
     printf("\t채널 수     : \x1b[32m%d\x1b[0m\n", channels);
-    printf("\t비트 깊이   : \x1b[32m%d\x1b[0m\n", bits);
+    printf("\t비트 심도   : \x1b[32m%d\x1b[0m\n", bitDepth);
 
     AudioStreamBasicDescription clientFormat = {0};
 
@@ -125,7 +134,7 @@ void play(AudioUnit* audioUnit,
    ;clientFormat.mFramesPerPacket  = 1
    ;clientFormat.mChannelsPerFrame = channels
    ;
-    switch (bits) {
+    switch (bitDepth) {
         case 8:
             clientFormat.mFormatFlags    = kLinearPCMFormatFlagIsPacked
            ;clientFormat.mBitsPerChannel = 8;
@@ -156,8 +165,8 @@ void play(AudioUnit* audioUnit,
             
         default:
             fprintf(stderr,
-                "\n[play]\x1b[31m(UnsupportedBitDepth) 지원하지 않는 비트 깊이 : %d\n",
-                bits
+                "\n[play]\x1b[31m(UnsupportedBitDepth) 지원하지 않는 비트 심도입니다 : %d\n",
+                bitDepth
             );
 
             return;

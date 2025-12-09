@@ -9,8 +9,9 @@
 #define VOLUME_SCALE 0.0244200244f
 
 struct LocalVol {
-    float baseVolume;
-    float currVolume;
+    float baseVolume     ;
+    float currVolume     ;
+    float reflectedVolume;
 
     bool  fadeActive ;
     float decayFactor;
@@ -18,11 +19,12 @@ struct LocalVol {
 };
 inline struct LocalVol LocalVol_init() {
     struct LocalVol out = {
-        .baseVolume  = 100.0,
-        .currVolume  = 1.0,
-        .fadeActive  = false,
-        .decayFactor = 0.0,
-        .target      = 0.0
+        .baseVolume      = 100.0,
+        .currVolume      = 1.0,
+        .reflectedVolume = 1.0,
+        .fadeActive      = false,
+        .decayFactor     = 0.0,
+        .target          = 0.0
     };
 
     return out;

@@ -9,7 +9,6 @@
 
 // This easing function follows the following formula:
 // f(t) = (t**3) * ((t*((t*6)-15))+10)
-// In this formula, valid results can be obtained when t is a float value between 0 and 1.
 
 // s0 : t && out
 // s1 : start

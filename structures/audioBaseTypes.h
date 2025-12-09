@@ -9,7 +9,7 @@ typedef struct {
     uint32_t     size      ;
     unsigned int sampleRate;
     unsigned int channels  ;
-    unsigned int bits      ;
+    unsigned int bitDepth  ;
 } Sound;
 
 typedef struct {

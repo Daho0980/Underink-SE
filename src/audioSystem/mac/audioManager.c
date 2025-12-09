@@ -5,12 +5,14 @@
 
 #include "audioSystemArgs.h"
 
+#include "easing.h"
+
 #include "audioSystem/queue.h"
 #include "audioSystem/audioChannel.h"
 #include "audioSystem/audioManagerTable.h"
 
 
-AudioManager* initializeManager(ManagerTable* mgrt, const char type[3], const char mode[8], int threadCount);
+AudioManager* initializeManager(ManagerTable* mgrt, const char type[3], const char mode[8], int threadCount, const char* rampEasingType);
 void destroyManager(AudioManager* mgr, bool force);
 void* audioManager(AudioManager* mgr);
 
@@ -25,7 +27,8 @@ AudioManager* initializeManager(
     ManagerTable* mgrt,
     const char    type[3],
     const char    mode[8],
-    int           threadCount
+    int           threadCount,
+    const char*   rampEasingType
 ) {
     printf("[initializeManager] initializeManager 호출됨\n");
     if ( !mgrt )  {
@@ -69,6 +72,23 @@ AudioManager* initializeManager(
             goto cleanup;
         }
         printf("[initializeManager]\x1b[32m(SUCCESS)\x1b[0m %d번째 스레드가 초기화되었습니다.\n", i);
+    }
+
+    if ( rampEasingType == NULL ) {
+        mgr->rampEasing = easingTable[0];
+    } else {
+        EasingEntry func = getEasingFunc(rampEasingType);
+        if ( strncmp(func.name, "NULL", 4) == 0 ) {
+            fprintf(stderr,
+                "[initializemanager]\x1b[31m(EasingFunctionNotFound)\x1b[0m 보간 함수 \x1b[32m'%s'\x1b[0m를 찾지 못했습니다.\n",
+                rampEasingType
+            );
+            destroyAllChannelThreads(mgr, mgr->threadCount, true);
+
+            goto cleanup;
+        }
+
+        mgr->rampEasing = func;
     }
 
     if ( mgrt ) registerManager(mgrt, mgr);
@@ -147,7 +167,8 @@ AudioManager* setBGMManager(ManagerTable* mgrt) {
         mgrt,
         "BGM",
         "SAMPLING",
-        BGM_THREADS
+        BGM_THREADS,
+        "smootherstep"
     );
     if ( mgr == NULL ) return NULL;
 
@@ -159,7 +180,8 @@ AudioManager* setSFXManager(ManagerTable* mgrt) {
         mgrt,
         "SFX",
         "ALLINONE",
-        SFX_THREADS
+        SFX_THREADS,
+        "linear"
     );
     if( mgr == NULL ) return NULL;
 

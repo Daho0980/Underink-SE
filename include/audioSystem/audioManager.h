@@ -8,7 +8,7 @@
 
 typedef struct AudioManager_t AudioManager_t;
 
-AudioManager* initializeManager(ManagerTable* mgrt, const char type[3], const char mode[8], int threadCount);
+AudioManager* initializeManager(ManagerTable* mgrt, const char type[3], const char mode[8], int threadCount, const char* rampEasingType);
 void destroyManager(AudioManager* mgr, bool force);
 AudioManager_t* audioManager(AudioManager* mgr);
 

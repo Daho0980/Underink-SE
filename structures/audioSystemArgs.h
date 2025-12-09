@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdatomic.h>
 
+#include "easing.h"
+
 #include "constants.h"
 #include "audioBaseTypes.h"
 
@@ -44,6 +46,8 @@ typedef struct {
     AudioChannelData* threads    ;
     int               threadCount;
     float             volume     ;
+
+    EasingEntry       rampEasing ;
 
     AudioRequest     queue[MAX_REQUEST_QUEUE];
     int              front                   ;

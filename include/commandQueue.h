@@ -31,7 +31,7 @@ uint8_t cmd_stop();
  * @brief   fade 명령을 생성합니다.
  * 
  * @param target   목표 볼륨 (0~4095, 12비트, 4095 = 100%)
- * @param duration 페이드 지속 시간 (밀리초 단위)
+ * @param duration 페이드 지속 시간 (1~65535, 16비트) (밀리초 단위)
  * 
  * @return uint32_t 32비트 명령값
  *  \n
