@@ -15,22 +15,20 @@
 // s2 : end
 // s3 : calcReg
 // s4 : calcReg1
-// s5 : const 6.0
-// s6 : const 15.0
-// s7 : const 10.0
+// s5 : const 6.0 & const 15.0 & const 10.0
 _smootherstep:
-    ldr         s5, CONST_6_0
-    ldr         s6, CONST_15_0
-    ldr         s7, CONST_10_0
 
     fmul        s3, s0, s0          // s0 ** 2 -> s3
     fmul        s3, s3, s0          // s3 * s0 -> s3
     // -> s3 = t**3
 
+    ldr         s5, CONST_6_0
     fmul        s4, s0, s5          // s0 * 6 -> s4
-    fsub        s4, s4, s6          // s4 -= 15
+    ldr         s5, CONST_15_0
+    fsub        s4, s4, s5          // s4 -= 15
     fmul        s4, s4, s0          // s4 *= s0(t)
-    fadd        s4, s4, s7          // s4 += 10
+    ldr         s5, CONST_10_0
+    fadd        s4, s4, s5          // s4 += 10
     // -> s4 = ((t*((t*6)-15))+10)
 
     fmul        s3, s3, s4          // s3 * s4 -> s3

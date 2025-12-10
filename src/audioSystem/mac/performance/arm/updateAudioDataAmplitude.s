@@ -1,3 +1,15 @@
+.section __TEXT,__const
+    .p2align 6
+vector_24_shuffleIndices:
+    .byte 0,1,2,0xFF   , 3,4,5,0xFF   , 6,7,8,0xFF   , 9,10,11,0xFF
+    .byte 12,13,14,0xFF, 15,16,17,0xFF, 18,19,20,0xFF, 21,22,23,0xFF
+    .byte 24,25,26,0xFF, 27,28,29,0xFF, 30,31,32,0xFF, 33,34,35,0xFF
+    .byte 36,37,38,0xFF, 39,40,41,0xFF, 42,43,44,0xFF, 45,46,47,0xFF
+vector_24_packIndices:
+    .byte 0,1,2, 4,5,6   , 8,9,10  , 12,13,14, 16,17,18, 20
+    .byte 21,22, 24,25,26, 28,29,30, 32,33,34, 36,37,38, 40,41
+    .byte 42   , 44,45,46, 48,49,50, 52,53,54, 56,57,58, 60,61,62
+
 .text
     .align 2
     increase_value: .float 0.01
@@ -60,6 +72,7 @@ s0 : target volume -> s2
 - w23 : ramp direction
         0 : down
         1 : up
+- w24 : size of bytes to read(on vector)
 
 ::vector::                              total(excluding calcReg) : 6 regs
     - dynamic -
@@ -77,7 +90,7 @@ s0 : target volume -> s2
  _updateAudioDataAmplitude:
     stp         x19, x20, [sp, #-16]!
     stp         x21, x22, [sp, #-16]!
-    stp         x23, xzr, [sp, #-16]!       // xzr padding
+    stp         x23, x24, [sp, #-16]!
     stp         x29, x30, [sp, #-16]!
 
     mov         x12, x1
@@ -117,6 +130,8 @@ s0 : target volume -> s2
         dup         v19.4s, w21
         dup         v20.4s, w22
 
+        mov         w24, #16
+
         b           loop
     pre_16:
         adr         x19, vector_16
@@ -127,14 +142,19 @@ s0 : target volume -> s2
         dup         v19.4s, w21
         dup         v20.4s, w22
 
+        mov         w24, #64
+
         b           loop
     pre_24:
+        adr         x19, vector_24
         adr         x20, scalar_24
 
         ldr         w21, =0x7FFFFF
         ldr         w22, =-0x800000
+        dup         v19.4s, w21
+        dup         v20.4s, w22
 
-        mov         w9, #1
+        mov         w24, #48
 
         b           loop
     pre_32:
@@ -145,6 +165,8 @@ s0 : target volume -> s2
         ldr         w22, =-0x80000000
         dup         v19.4s, w21
         dup         v20.4s, w22
+
+        mov         w24, #128
 
         b           loop
 
@@ -157,7 +179,7 @@ loop:
     cbnz        w9, do_scalar
 
     sub         x13, x12, x7
-    cmp         x13, #16
+    cmp         x13, x24
     cset        w9, lt
 
     cbnz        w9, do_scalar
@@ -172,7 +194,7 @@ continue_loop:
         add         x7, x7, x4
         b           continue_loop_end
     inc_vector:
-        add         x7, x7, #16
+        add         x7, x7, x24
 
     continue_loop_end:
         cbnz        w10, volumeRamping
@@ -180,7 +202,7 @@ continue_loop:
         b           loop
 end_loop:
     ldp         x29, x30, [sp], #16
-    ldp         x23, xzr, [sp], #16
+    ldp         x23, x24, [sp], #16
     ldp         x21, x22, [sp], #16
     ldp         x19, x20, [sp], #16
 
@@ -294,7 +316,7 @@ scalar_8:
 
     b           continue_loop
 
-vector_16:
+vector_16_old:
     ld1         {v3.8h}, [x8]
 
     sxtl        v4.4s, v3.4h
@@ -318,6 +340,74 @@ vector_16:
     st1         {v3.8h}, [x8]
 
     b           continue_loop
+vector_16:
+    ld1         {v3.8h, v4.8h, v5.8h, v6.8h}, [x8]
+
+    sxtl        v21.4s, v3.4h
+    sxtl2       v22.4s, v3.8h
+    sxtl        v23.4s, v4.4h
+    sxtl2       v24.4s, v4.8h
+    sxtl        v25.4s, v5.4h
+    sxtl2       v26.4s, v5.8h
+    sxtl        v27.4s, v6.4h
+    sxtl2       v28.4s, v6.8h
+
+    scvtf       v21.4s, v21.4s
+    scvtf       v22.4s, v22.4s
+    scvtf       v23.4s, v23.4s
+    scvtf       v24.4s, v24.4s
+    scvtf       v25.4s, v25.4s
+    scvtf       v26.4s, v26.4s
+    scvtf       v27.4s, v27.4s
+    scvtf       v28.4s, v28.4s
+
+    fmul        v21.4s, v21.4s, v18.s[0]
+    fmul        v22.4s, v22.4s, v18.s[0]
+    fmul        v23.4s, v23.4s, v18.s[0]
+    fmul        v24.4s, v24.4s, v18.s[0]
+    fmul        v25.4s, v25.4s, v18.s[0]
+    fmul        v26.4s, v26.4s, v18.s[0]
+    fmul        v27.4s, v27.4s, v18.s[0]
+    fmul        v28.4s, v28.4s, v18.s[0]
+
+    fcvtzs      v21.4s, v21.4s
+    fcvtzs      v22.4s, v22.4s
+    fcvtzs      v23.4s, v23.4s
+    fcvtzs      v24.4s, v24.4s
+    fcvtzs      v25.4s, v25.4s
+    fcvtzs      v26.4s, v26.4s
+    fcvtzs      v27.4s, v27.4s
+    fcvtzs      v28.4s, v28.4s
+
+    smin        v21.4s, v21.4s, v19.4s
+    smax        v21.4s, v21.4s, v20.4s
+    smin        v22.4s, v22.4s, v19.4s
+    smax        v22.4s, v22.4s, v20.4s
+    smin        v23.4s, v23.4s, v19.4s
+    smax        v23.4s, v23.4s, v20.4s
+    smin        v24.4s, v24.4s, v19.4s
+    smax        v24.4s, v24.4s, v20.4s
+    smin        v25.4s, v25.4s, v19.4s
+    smax        v25.4s, v25.4s, v20.4s
+    smin        v26.4s, v26.4s, v19.4s
+    smax        v26.4s, v26.4s, v20.4s
+    smin        v27.4s, v27.4s, v19.4s
+    smax        v27.4s, v27.4s, v20.4s
+    smin        v28.4s, v28.4s, v19.4s
+    smax        v28.4s, v28.4s, v20.4s
+
+    sqxtn       v3.4h, v21.4s
+    sqxtn2      v3.8h, v22.4s
+    sqxtn       v4.4h, v23.4s
+    sqxtn2      v4.8h, v24.4s
+    sqxtn       v5.4h, v25.4s
+    sqxtn2      v5.8h, v26.4s
+    sqxtn       v6.4h, v27.4s
+    sqxtn2      v6.8h, v28.4s
+
+    st1         {v3.8h, v4.8h, v5.8h, v6.8h}, [x8]
+
+    b           continue_loop
 scalar_16:
     ldrsh       w13, [x8]
     scvtf       s3, w13
@@ -333,6 +423,68 @@ scalar_16:
 
     b           continue_loop
 
+vector_24:
+    ld1         {v3.16b, v4.16b, v5.16b}, [x8]
+    // v3 : 3 3 3 3 3 1
+    // v4 : 2 3 3 3 3 2
+    // v5 : 1 3 3 3 3 3
+
+    // shuffle
+    adrp        x13, vector_24_shuffleIndices@PAGE
+    add         x13, x13, vector_24_shuffleIndices@PAGEOFF
+    ld1         {v21.16b, v22.16b, v23.16b, v24.16b}, [x13]
+
+    tbl         v25.16b, {v3.16b, v4.16b, v5.16b}, v21.16b
+    tbl         v26.16b, {v3.16b, v4.16b, v5.16b}, v22.16b
+    tbl         v27.16b, {v3.16b, v4.16b, v5.16b}, v23.16b
+    tbl         v28.16b, {v3.16b, v4.16b, v5.16b}, v24.16b
+
+    // signed extension
+    shl         v25.4s, v25.4s, #8
+    sshr        v25.4s, v25.4s, #8
+    shl         v26.4s, v26.4s, #8
+    sshr        v26.4s, v26.4s, #8
+    shl         v27.4s, v27.4s, #8
+    sshr        v27.4s, v27.4s, #8
+    shl         v28.4s, v28.4s, #8
+    sshr        v28.4s, v28.4s, #8
+
+    scvtf       v25.4s, v25.4s
+    scvtf       v26.4s, v26.4s
+    scvtf       v27.4s, v27.4s
+    scvtf       v28.4s, v28.4s
+
+    fmul        v25.4s, v25.4s, v18.s[0]
+    fmul        v26.4s, v26.4s, v18.s[0]
+    fmul        v27.4s, v27.4s, v18.s[0]
+    fmul        v28.4s, v28.4s, v18.s[0]
+
+    fcvtzs      v25.4s, v25.4s
+    fcvtzs      v26.4s, v26.4s
+    fcvtzs      v27.4s, v27.4s
+    fcvtzs      v28.4s, v28.4s
+
+    smin        v25.4s, v25.4s, v19.4s
+    smax        v25.4s, v25.4s, v20.4s
+    smin        v26.4s, v26.4s, v19.4s
+    smax        v26.4s, v26.4s, v20.4s
+    smin        v27.4s, v27.4s, v19.4s
+    smax        v27.4s, v27.4s, v20.4s
+    smin        v28.4s, v28.4s, v19.4s
+    smax        v28.4s, v28.4s, v20.4s
+
+    // pack
+    adrp        x13, vector_24_packIndices@PAGE
+    add         x13, x13, vector_24_packIndices@PAGEOFF
+    ld1         {v21.16b, v22.16b, v23.16b}, [x13]
+
+    tbl         v3.16b, {v25.16b, v26.16b, v27.16b, v28.16b}, v21.16b
+    tbl         v4.16b, {v25.16b, v26.16b, v27.16b, v28.16b}, v22.16b
+    tbl         v5.16b, {v25.16b, v26.16b, v27.16b, v28.16b}, v23.16b
+
+    st1         {v3.16b, v4.16b, v5.16b}, [x8]
+
+    b           continue_loop
 scalar_24:
     ldrb        w13, [x8]
     ldrb        w14, [x8, #1]
@@ -359,8 +511,9 @@ scalar_24:
 
     b           continue_loop
 
-vector_32:
+vector_32_old:
     ld1         {v3.4s}, [x8]
+
     scvtf       v4.4s, v3.4s
     fmul        v4.4s, v4.4s, v18.s[0]
     fcvtzs      v4.4s, v4.4s
@@ -369,6 +522,59 @@ vector_32:
     smax        v4.4s, v4.4s, v20.4s
 
     st1         {v4.4s}, [x8]
+
+    b           continue_loop
+vector_32:
+    ld1         {v21.4s, v22.4s, v23.4s, v24.4s}, [x8]
+    ld1         {v25.4s, v26.4s, v27.4s, v28.4s}, [x8]
+
+    scvtf       v21.4s, v21.4s
+    scvtf       v22.4s, v22.4s
+    scvtf       v23.4s, v23.4s
+    scvtf       v24.4s, v24.4s
+    scvtf       v25.4s, v25.4s
+    scvtf       v26.4s, v26.4s
+    scvtf       v27.4s, v27.4s
+    scvtf       v28.4s, v28.4s
+
+    fmul        v21.4s, v21.4s, v18.s[0]
+    fmul        v22.4s, v22.4s, v18.s[0]
+    fmul        v23.4s, v23.4s, v18.s[0]
+    fmul        v24.4s, v24.4s, v18.s[0]
+    fmul        v25.4s, v25.4s, v18.s[0]
+    fmul        v26.4s, v26.4s, v18.s[0]
+    fmul        v27.4s, v27.4s, v18.s[0]
+    fmul        v28.4s, v28.4s, v18.s[0]
+
+    fcvtzs      v21.4s, v21.4s
+    fcvtzs      v22.4s, v22.4s
+    fcvtzs      v23.4s, v23.4s
+    fcvtzs      v24.4s, v24.4s
+    fcvtzs      v25.4s, v25.4s
+    fcvtzs      v26.4s, v26.4s
+    fcvtzs      v27.4s, v27.4s
+    fcvtzs      v28.4s, v28.4s
+
+    smin        v21.4s, v21.4s, v19.4s
+    smax        v21.4s, v21.4s, v20.4s
+    smin        v22.4s, v22.4s, v19.4s
+    smax        v22.4s, v22.4s, v20.4s
+    smin        v23.4s, v23.4s, v19.4s
+    smax        v23.4s, v23.4s, v20.4s
+    smin        v24.4s, v24.4s, v19.4s
+    smax        v24.4s, v24.4s, v20.4s
+    smin        v25.4s, v25.4s, v19.4s
+    smax        v25.4s, v25.4s, v20.4s
+    smin        v26.4s, v26.4s, v19.4s
+    smax        v26.4s, v26.4s, v20.4s
+    smin        v27.4s, v27.4s, v19.4s
+    smax        v27.4s, v27.4s, v20.4s
+    smin        v28.4s, v28.4s, v19.4s
+    smax        v28.4s, v28.4s, v20.4s
+
+    st1         {v21.4s, v22.4s, v23.4s, v24.4s}, [x8], #64
+    st1         {v25.4s, v26.4s, v27.4s, v28.4s}, [x8]
+    sub         x8, x8, #64
 
     b           continue_loop
 scalar_32:
